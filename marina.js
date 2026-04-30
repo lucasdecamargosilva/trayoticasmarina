@@ -426,13 +426,13 @@
             justify-content: center !important;
             gap: 10px !important;
             width: 100% !important;
-            height: 45px !important;
+            height: 58px !important;
             background-color: #ffffff !important;
             color: #000000 !important;
             border: 1px solid #000000 !important;
             border-radius: 0px !important;
             font-family: 'Inter', sans-serif !important;
-            font-size: 10px !important;
+            font-size: 13px !important;
             font-weight: 700 !important;
             text-transform: uppercase !important;
             letter-spacing: 2px !important;
@@ -653,7 +653,7 @@
     `;
 
     const CABINE_ICON_URL = 'https://i.ibb.co/50TPgYj/cabine-icone-oficial.png';
-    const stampImageHTML = `<img src="${CABINE_ICON_URL}" alt="Provador Virtual" style="width:70%;height:70%;object-fit:contain;">`;
+    const stampImageHTML = `<img src="https://cdn.shopify.com/s/files/1/0636/6334/1746/files/logo_provador.png?v=1772494793" alt="Provador Virtual" style="width:100%;height:100%;object-fit:contain;">`;
 
 
     const html = `
@@ -797,7 +797,7 @@
         function createBuyButton() {
             var container = document.createElement('div');
             container.className = 'pl-buy-btn-container';
-            container.style.cssText = 'position:relative;width:100%;max-width:200px;margin:35px auto 15px;';
+            container.style.cssText = 'position:relative;width:100%;margin:20px 0 15px;';
 
             var badge = document.createElement('div');
             badge.className = 'pl-badge-novidade';
