@@ -426,7 +426,7 @@
             justify-content: center !important;
             gap: 10px !important;
             width: 100% !important;
-            height: 58px !important;
+            height: 50px !important;
             background-color: #ffffff !important;
             color: #000000 !important;
             border: 1px solid #000000 !important;
