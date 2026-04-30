@@ -167,7 +167,7 @@
             20%,40% { transform:rotate(10deg); }
         }
         .q-btn-trigger-ia {
-            position:absolute; top:15px; right:15px; z-index:100;
+            position:absolute; top:15px; left:15px; z-index:100;
             background:none; border:none; padding:0; cursor:pointer;
             width:72px; height:72px;
             display:flex; align-items:center; justify-content:center;
