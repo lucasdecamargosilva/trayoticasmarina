@@ -381,7 +381,7 @@
             flex-shrink:0; border-top:1px solid #f5f5f5; text-decoration:none;
         }
         .q-powered-footer span { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#666; }
-        .q-quantic-logo { height:22px; filter:brightness(0); }
+        .q-quantic-logo { height:32px; filter:brightness(0); }
     `;
 
     // ─── 5. INIT ──────────────────────────────────────────────────────────────────
