@@ -713,17 +713,11 @@
             var keyToUse = window.PROVOU_LEVOU_API_KEY;
             if (!keyToUse) { alert('Erro: API Key não configurada.'); return; }
 
-            var prodImgTag = document.querySelector(
-                '.frame_slider_principal .swiper-slide-active img, ' +
-                '.frame_slider_principal .swiper-slide:first-child img.swiper-lazy, ' +
-                '.frame_slider_principal img[src]:not([src=""]), ' +
-                '.carousel_gallery img[src]:not([src=""]), ' +
-                '.image-show .box-img.active .zoom img, ' +
-                '.image-show img, .product__media img'
-            );
-            var prodImg = prodImgTag
-                ? (prodImgTag.dataset.src || prodImgTag.dataset.lazy || prodImgTag.src)
-                : (document.querySelector('meta[property="og:image"]')?.content || '');
+            // Tray injeta window.dataLayer[0].urlImage com a imagem correta do produto
+            var prodImg =
+                (window.dataLayer && window.dataLayer[0] && window.dataLayer[0].urlImage) ||
+                document.querySelector('meta[property="og:image"]')?.content ||
+                '';
             var prodName = document.querySelector('h1.product-name, h1.product__title, .product-single__title, h1')?.innerText || document.title;
 
             stepUpload.style.display = 'none';
