@@ -582,8 +582,7 @@
 
         if (BUTTON_MODE === 'image' || BUTTON_MODE === 'both') {
             var imgSels = [
-                '.carousel_gallery', '.product_gallery',
-                '.frame_slider_principal',
+                '.frame_slider_principal', '.carousel_gallery', '.product_gallery',
                 '.produto-imagem', '.product-image', '.product-images',
                 '.image-show', '.box-gallery', '.product-colum-left',
                 '.product__media-wrapper', '.product-gallery__media', '.product__media',
