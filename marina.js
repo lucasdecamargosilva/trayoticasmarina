@@ -537,9 +537,11 @@
             .q-card-ia.is-result #q-result-actions-col {
                 width: 56% !important; padding: 28px 24px !important;
                 display: flex !important; flex-direction: column !important;
-                justify-content: flex-start; gap: 10px;
+                justify-content: flex-start; gap: 12px;
                 overflow-y: auto;
             }
+            .q-card-ia.is-result .q-btn-black,
+            .q-card-ia.is-result .q-btn-outline { height: 64px !important; font-size: 18px !important; }
             .q-card-ia.is-result #q-related-products { padding: 0; margin-top: 4px; }
             .q-card-ia.is-result .q-res-mobile-only { display: flex !important; }
         }
@@ -802,10 +804,6 @@
         resultImgCol.appendChild(finalImg);
         var resultActCol = document.createElement('div');
         resultActCol.id = 'q-result-actions-col';
-        var resTitle = document.createElement('span');
-        resTitle.className = 'q-res-title';
-        resTitle.textContent = 'Provador Virtual';
-        resultActCol.appendChild(resTitle);
         var backBtn = document.createElement('button');
         backBtn.className = 'q-btn-outline';
         backBtn.id = 'q-btn-back';
