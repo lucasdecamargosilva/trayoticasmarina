@@ -330,8 +330,8 @@
         }
 
         #q-step-result { display:none; flex-direction:column; gap:24px; align-items:stretch; }
-        #q-result-img-col { width:100%; border:1px solid #000; background:#f5f5f5; overflow:hidden; }
-        #q-result-img-col img { width:100%; height:auto; display:block; }
+        #q-result-img-col { width:100%; max-height:72vh; border:1px solid #000; background:#f5f5f5; overflow:hidden; }
+        #q-result-img-col img { width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
         #q-result-actions-col { display:flex; flex-direction:column; gap:12px; }
         .q-res-title,.q-res-subtitle,.q-res-note { display:none; }
         .q-res-mobile-only {
