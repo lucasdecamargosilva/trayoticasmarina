@@ -572,6 +572,23 @@
         stepResult.appendChild(resultActCol);
         scroll.appendChild(stepResult);
 
+        // Error step
+        var stepError = document.createElement('div');
+        stepError.id = 'q-step-error';
+        stepError.style.display = 'none';
+        var errH2 = document.createElement('h2');
+        errH2.textContent = 'Provador fora do ar';
+        var errP = document.createElement('p');
+        errP.textContent = 'Voltamos em breve 🙏';
+        var errBtn = document.createElement('button');
+        errBtn.className = 'q-btn-outline';
+        errBtn.id = 'q-error-back';
+        errBtn.textContent = 'Voltar ao Produto';
+        stepError.appendChild(errH2);
+        stepError.appendChild(errP);
+        stepError.appendChild(errBtn);
+        scroll.appendChild(stepError);
+
         card.appendChild(scroll);
 
         // Footer
@@ -708,7 +725,7 @@
             if (su) su.style.display = 'none';
             if (se) se.style.display = 'flex';
         }
-        document.getElementById('q-error-back').onclick = function() { closeModal(); };
+        var _eb = document.getElementById('q-error-back'); if (_eb) _eb.onclick = function() { closeModal(); };
 
 
         phoneInput.addEventListener('input', function(e) {
