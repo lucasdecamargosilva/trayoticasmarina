@@ -513,7 +513,7 @@
         @media (min-width: 768px) {
             .q-card-ia.is-result { width: 780px !important; max-width: 90vw !important; max-height: 92vh !important; }
             .q-card-ia.is-result #q-header-provador { display: none !important; }
-            .q-card-ia.is-result .q-powered-footer { display: none !important; }
+            /* .q-powered-footer always visible */
             .q-card-ia.is-result .q-content-scroll {
                 padding: 0 !important; overflow-y: auto !important;
                 display: flex !important; flex-direction: column !important;
