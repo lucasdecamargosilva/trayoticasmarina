@@ -9,7 +9,7 @@
     const API_HOST = 'https://lojista.provoulevou.com.br';
     const WEBHOOK_PROVA = 'https://n8n.segredosdodrop.com/webhook/gerador-oculos';
     const MARINA_LOGO = 'https://images.tcdn.com.br/img/img_prod/1269258/1701713968_marina_centro_ptico.png';
-    const PROVOU_LOGO = 'https://provoulevou.com.br/assets/provoulevou-logo.png';
+    const PROVOU_LOGO = 'https://i.ibb.co/MD3B4FQf/Logo-provou-preto-1.png';
     const STAMP_SRC = 'https://cdn.shopify.com/s/files/1/0636/6334/1746/files/logo_provador.png?v=1772494793';
 
     // ─── 1. DESIGN FETCH ─────────────────────────────────────────────────────────
@@ -779,7 +779,7 @@
         var t2Span = document.createElement('span');
         t2Span.textContent = 'Powered by';
         var t2Img = document.createElement('img');
-        t2Img.src = 'https://provoulevou.com.br/assets/provoulevou-logo.png';
+        t2Img.src = 'https://i.ibb.co/MD3B4FQf/Logo-provou-preto-1.png';
         t2Img.alt = 'Provou Levou';
         loadingT2.appendChild(t2Span);
         loadingT2.appendChild(t2Img);
