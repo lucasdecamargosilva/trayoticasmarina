@@ -449,7 +449,7 @@
             font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
             color: var(--c-muted); font-family: var(--font-body);
         }
-        .q-loading-t2 img { height: 26px; width: auto; filter: brightness(0); opacity: 0.6; }
+        .q-loading-t2 img { height: 26px; width: auto; opacity: 0.7; }
         .q-loading-bar { height: 1px; background: var(--c-line); width: 100%; position: relative; overflow: hidden; }
         .q-loading-bar > div {
             position: absolute; top: 0; left: 0; height: 100%; width: 35%;
