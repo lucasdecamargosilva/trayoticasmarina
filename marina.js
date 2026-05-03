@@ -381,6 +381,29 @@
             flex-shrink:0; border-top:1px solid #f5f5f5; text-decoration:none;
         }
         .q-powered-footer span { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#666; }
+
+        #q-step-error {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+            align-items: center;
+            text-align: center;
+            padding: 40px 0;
+        }
+        #q-step-error h2 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 0;
+            color: #000;
+        }
+        #q-step-error p {
+            font-size: 13px;
+            color: #666;
+            margin: 0;
+            line-height: 1.6;
+        }
         .q-quantic-logo { height:32px; filter:brightness(0); }
     `;
 
@@ -677,6 +700,17 @@
 
         trigUpload.onclick = () => realInput.click();
 
+        function showError() {
+            var lb = document.getElementById('q-loading-box');
+            var su = document.getElementById('q-step-upload');
+            var se = document.getElementById('q-step-error');
+            if (lb) lb.style.display = 'none';
+            if (su) su.style.display = 'none';
+            if (se) se.style.display = 'flex';
+        }
+        document.getElementById('q-error-back').onclick = function() { closeModal(); };
+
+
         phoneInput.addEventListener('input', function(e) {
             var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
             e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
@@ -771,7 +805,7 @@
             } catch (e) {
                 loadingBox.style.display = 'none';
                 stepUpload.style.display = 'flex';
-                alert('Ocorreu um erro ao processar sua imagem. Tente novamente.');
+                showError();
             }
         };
     }
