@@ -631,62 +631,120 @@
         header.appendChild(marinaImg);
         scroll.appendChild(header);
 
-        // Step upload
+        // Step upload — new design with face frame
         var stepUpload = document.createElement('div');
-        stepUpload.id = 'q-step-upload';
+        stepUpload.id = 'q-step-photo';
 
-        var phoneRow = document.createElement('div');
-        phoneRow.className = 'q-form-row';
-        var phoneLbl = document.createElement('label');
-        phoneLbl.textContent = 'Seu Celular';
-        phoneRow.appendChild(phoneLbl);
+        // Phone
+        var phoneWrap = document.createElement('div');
+        phoneWrap.className = 'q-phone-wrap';
+        var phoneLbl = document.createElement('span');
+        phoneLbl.className = 'q-field-label';
+        phoneLbl.textContent = 'Seu WhatsApp';
+        phoneWrap.appendChild(phoneLbl);
         var phoneInput = document.createElement('input');
         phoneInput.type = 'tel';
         phoneInput.id = 'q-phone';
         phoneInput.className = 'q-input';
         phoneInput.placeholder = '(11) 99999-9999';
         phoneInput.maxLength = 15;
-        phoneRow.appendChild(phoneInput);
+        phoneWrap.appendChild(phoneInput);
         var phoneErr = document.createElement('div');
         phoneErr.id = 'q-phone-error';
         phoneErr.className = 'q-status-msg';
         phoneErr.textContent = 'Insira um número válido';
-        phoneRow.appendChild(phoneErr);
-        stepUpload.appendChild(phoneRow);
+        phoneWrap.appendChild(phoneErr);
+        stepUpload.appendChild(phoneWrap);
 
-        var uploadRow = document.createElement('div');
-        uploadRow.id = 'q-upload-row';
-        var trigUpload = document.createElement('div');
-        trigUpload.id = 'q-trigger-upload';
-        var camIcon = document.createElement('i');
-        camIcon.className = 'ph ph-camera-plus';
-        trigUpload.appendChild(camIcon);
-        var camSpan = document.createElement('span');
-        camSpan.textContent = 'Enviar Foto';
-        trigUpload.appendChild(camSpan);
-        var realInput = document.createElement('input');
-        realInput.type = 'file';
-        realInput.id = 'q-real-input';
-        realInput.accept = 'image/*';
-        realInput.style.display = 'none';
-        trigUpload.appendChild(realInput);
-        uploadRow.appendChild(trigUpload);
-        var preView = document.createElement('div');
-        preView.id = 'q-pre-view';
+        // Section label
+        var sectionLbl = document.createElement('p');
+        sectionLbl.className = 'q-section-label';
+        sectionLbl.textContent = 'Envie sua foto';
+        stepUpload.appendChild(sectionLbl);
+
+        // Tip box
+        var tipBox = document.createElement('div');
+        tipBox.className = 'q-tip-box';
+        var tipIcon = document.createElement('i');
+        tipIcon.className = 'ph ph-lightbulb';
+        var tipSpan = document.createElement('span');
+        tipSpan.textContent = 'Use uma foto nítida, de frente, com boa iluminação.';
+        tipBox.appendChild(tipIcon);
+        tipBox.appendChild(tipSpan);
+        stepUpload.appendChild(tipBox);
+
+        // Face frame
+        var faceFrame = document.createElement('div');
+        faceFrame.className = 'q-face-frame';
+        faceFrame.id = 'q-face-frame';
+        ['tl','tr','bl','br'].forEach(function(c) {
+            var corner = document.createElement('div');
+            corner.className = 'q-face-corner q-face-corner-' + c;
+            faceFrame.appendChild(corner);
+        });
         var preImg = document.createElement('img');
         preImg.id = 'q-pre-img';
-        preView.appendChild(preImg);
-        uploadRow.appendChild(preView);
-        stepUpload.appendChild(uploadRow);
+        preImg.alt = 'Sua foto';
+        faceFrame.appendChild(preImg);
+        var facePlaceholder = document.createElement('div');
+        facePlaceholder.className = 'q-face-placeholder';
+        facePlaceholder.id = 'q-face-placeholder';
+        var faceIcon = document.createElement('i');
+        faceIcon.className = 'ph ph-user-circle';
+        faceIcon.style.cssText = 'font-size:80px;color:#d4d4d4;';
+        facePlaceholder.appendChild(faceIcon);
+        faceFrame.appendChild(facePlaceholder);
+        stepUpload.appendChild(faceFrame);
+
+        // Upload buttons
+        var uploadBtns = document.createElement('div');
+        uploadBtns.className = 'q-upload-btns';
+        var cameraBtn = document.createElement('button');
+        cameraBtn.className = 'q-upload-btn';
+        cameraBtn.id = 'q-btn-camera';
+        cameraBtn.type = 'button';
+        var camI = document.createElement('i');
+        camI.className = 'ph ph-camera';
+        cameraBtn.appendChild(camI);
+        cameraBtn.appendChild(document.createTextNode(' Tirar foto'));
+        var galleryBtn = document.createElement('button');
+        galleryBtn.className = 'q-upload-btn';
+        galleryBtn.id = 'q-btn-gallery';
+        galleryBtn.type = 'button';
+        var galI = document.createElement('i');
+        galI.className = 'ph ph-image';
+        galleryBtn.appendChild(galI);
+        galleryBtn.appendChild(document.createTextNode(' Da galeria'));
+        var cameraInput = document.createElement('input');
+        cameraInput.type = 'file';
+        cameraInput.id = 'q-camera-input';
+        cameraInput.accept = 'image/*';
+        cameraInput.setAttribute('capture', 'user');
+        cameraInput.style.display = 'none';
+        var galleryInput = document.createElement('input');
+        galleryInput.type = 'file';
+        galleryInput.id = 'q-gallery-input';
+        galleryInput.accept = 'image/*';
+        galleryInput.style.display = 'none';
+        uploadBtns.appendChild(cameraBtn);
+        uploadBtns.appendChild(galleryBtn);
+        uploadBtns.appendChild(cameraInput);
+        uploadBtns.appendChild(galleryInput);
+        stepUpload.appendChild(uploadBtns);
+
+        // realInput alias for PIX compat
+        var realInput = galleryInput;
+        var trigUpload = { onclick: null }; // stub for compat
 
         var termsLabel = document.createElement('label');
         termsLabel.className = 'q-terms-row';
+        termsLabel.style.cssText = 'margin-top:20px;margin-bottom:20px;';
         var termsCheck = document.createElement('input');
         termsCheck.type = 'checkbox';
         termsCheck.id = 'q-accept-terms';
         termsLabel.appendChild(termsCheck);
         var termsSpan = document.createElement('span');
-        termsSpan.textContent = 'Ao continuar, concordo com os ';
+        termsSpan.textContent = 'Concordo com os ';
         var termsLink = document.createElement('a');
         termsLink.href = 'http://provoulevou.com.br/termos.html';
         termsLink.target = '_blank';
@@ -884,15 +942,19 @@
             stepUpload.style.display = 'flex';
             card.classList.remove('is-result');
             userPhoto = null;
-            preView.style.display = 'none';
+            if (preImg) preImg.style.display = 'none';
+            var fp = document.getElementById('q-face-placeholder');
+            if (fp) fp.style.display = 'flex';
             checkFields();
         };
 
-        trigUpload.onclick = () => realInput.click();
+        document.getElementById('q-btn-camera').onclick = function() { cameraInput.click(); };
+        document.getElementById('q-btn-gallery').onclick = function() { galleryInput.click(); };
+        document.getElementById('q-face-frame').onclick = function() { galleryInput.click(); };
 
         function showError() {
             var lb = document.getElementById('q-loading-box');
-            var su = document.getElementById('q-step-upload');
+            var su = document.getElementById('q-step-photo');
             var se = document.getElementById('q-step-error');
             if (lb) lb.style.display = 'none';
             if (su) su.style.display = 'none';
@@ -919,18 +981,21 @@
 
         termsCheck.onchange = checkFields;
 
-        realInput.onchange = function(e) {
-            userPhoto = e.target.files[0];
-            if (userPhoto) {
-                var rd = new FileReader();
-                rd.onload = function(ev) {
-                    preImg.src = ev.target.result;
-                    preView.style.display = 'block';
-                    checkFields();
-                };
-                rd.readAsDataURL(userPhoto);
-            }
-        };
+        function handlePhotoSelected(file) {
+            if (!file) return;
+            userPhoto = file;
+            var rd = new FileReader();
+            rd.onload = function(ev) {
+                preImg.src = ev.target.result;
+                preImg.style.display = 'block';
+                var fp = document.getElementById('q-face-placeholder');
+                if (fp) fp.style.display = 'none';
+                checkFields();
+            };
+            rd.readAsDataURL(file);
+        }
+        cameraInput.onchange = function(e) { handlePhotoSelected(e.target.files[0]); };
+        galleryInput.onchange = function(e) { handlePhotoSelected(e.target.files[0]); };
 
         genBtn.onclick = async function() {
             if (!userPhoto) return;
@@ -945,7 +1010,7 @@
             var prodName = document.querySelector('h1.product-name, h1.product__title, .product-single__title, h1')?.innerText || document.title;
 
             stepUpload.style.display = 'none';
-            loadingBox.style.display = 'block';
+            loadingBox.style.display = 'flex';
 
             try {
                 var fd = new FormData();
