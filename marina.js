@@ -541,7 +541,7 @@
                 overflow-y: auto;
             }
             .q-card-ia.is-result .q-btn-black,
-            .q-card-ia.is-result .q-btn-outline { height: 64px !important; font-size: 18px !important; }
+            .q-card-ia.is-result .q-btn-outline { height: 78px !important; font-size: 19px !important; }
             .q-card-ia.is-result #q-related-products { padding: 0; margin-top: 4px; }
             .q-card-ia.is-result .q-res-mobile-only { display: flex !important; }
         }
@@ -797,6 +797,10 @@
         // Result
         var stepResult = document.createElement('div');
         stepResult.id = 'q-step-result';
+        var resTitle = document.createElement('span');
+        resTitle.className = 'q-res-title';
+        resTitle.textContent = 'Veja como ficou em você ✨';
+        stepResult.appendChild(resTitle);
         var resultImgCol = document.createElement('div');
         resultImgCol.id = 'q-result-img-col';
         var finalImg = document.createElement('img');
