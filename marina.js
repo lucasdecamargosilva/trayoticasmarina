@@ -578,7 +578,7 @@
         .q-tip-box { background: #e8f7fa !important; border-left-color: #6dadbc !important; color: #2d6b7a !important; }
         .q-tip-box i { color: #6dadbc !important; }
         #q-related-products h4 { color: #6dadbc !important; }
-        .q-quantic-logo { height: 20px; filter: brightness(0); opacity: 0.5; }
+        .q-quantic-logo { height: 20px; opacity: 0.7; }
     `;
 
     // ─── 5. INIT ──────────────────────────────────────────────────────────────────
