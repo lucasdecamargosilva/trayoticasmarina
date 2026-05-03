@@ -458,7 +458,6 @@
 
         /* ── Result ── */
         #q-step-result { display: none; flex-direction: column; gap: 0; align-items: stretch; }
-        .q-card-ia.is-result #q-header-provador { display: none !important; }
 
         .q-res-title {
             display: block;
@@ -512,8 +511,7 @@
         /* Desktop result split */
         @media (min-width: 768px) {
             .q-card-ia.is-result { width: 780px !important; max-width: 90vw !important; max-height: 92vh !important; }
-            .q-card-ia.is-result #q-header-provador { display: none !important; }
-            /* .q-powered-footer always visible */
+                /* .q-powered-footer always visible */
             .q-card-ia.is-result .q-content-scroll {
                 padding: 0 !important; overflow-y: auto !important;
                 display: flex !important; flex-direction: column !important;
