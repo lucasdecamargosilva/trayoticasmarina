@@ -251,7 +251,7 @@
             #q-modal-ia { display:none; overflow-y:auto; align-items:flex-start; justify-content:center; }
             #q-modal-ia[style*="flex"] { display:flex !important; }
             .q-card-ia { width:100%; border:none; margin:0; min-height:100svh; }
-            .q-content-scroll { flex:none; }
+            .q-content-scroll { flex: 1; }
         }
 
         /* ── Header strip ── */
