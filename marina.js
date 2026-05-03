@@ -177,7 +177,7 @@
         /* ── Trigger (selo sobre foto) ── */
         @keyframes q-shake { 0%,50%,100%{transform:rotate(0deg)} 10%,30%{transform:rotate(-10deg)} 20%,40%{transform:rotate(10deg)} }
         .q-btn-trigger-ia {
-            position: absolute; top: 14px; right: 32px; z-index: 100;
+            position: absolute; top: 14px; right: 50px; z-index: 100;
             background: none; border: none; padding: 0; cursor: pointer;
             width: 70px; height: 70px;
             display: flex; align-items: center; justify-content: center;
@@ -812,10 +812,28 @@
         backBtn.textContent = 'Voltar ao Produto';
         resultActCol.appendChild(backBtn);
         var retryBtn = document.createElement('p');
-        retryBtn.className = 'q-res-mobile-only';
+        retryBtn.className = 'q-btn-black q-res-mobile-only';
         retryBtn.id = 'q-retry-btn';
-        retryBtn.textContent = 'Tentar outra foto';
+        retryBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;';
+        var retryIcon = document.createElement('i');
+        retryIcon.className = 'ph ph-camera';
+        retryBtn.appendChild(retryIcon);
+        retryBtn.appendChild(document.createTextNode(' Tentar outra foto'));
         resultActCol.appendChild(retryBtn);
+
+        // Related products section
+        var relatedSection = document.createElement('div');
+        relatedSection.id = 'q-related-products';
+        relatedSection.style.display = 'none';
+        var relatedH4 = document.createElement('h4');
+        relatedH4.textContent = 'Veja também';
+        var relatedGrid = document.createElement('div');
+        relatedGrid.className = 'q-related-grid';
+        relatedGrid.id = 'q-related-grid';
+        relatedSection.appendChild(relatedH4);
+        relatedSection.appendChild(relatedGrid);
+        resultActCol.appendChild(relatedSection);
+
         stepResult.appendChild(resultImgCol);
         stepResult.appendChild(resultActCol);
         scroll.appendChild(stepResult);
@@ -969,6 +987,55 @@
         document.getElementById('q-btn-gallery').onclick = function() { galleryInput.click(); };
         document.getElementById('q-face-frame').onclick = function() { galleryInput.click(); };
 
+
+        function loadRelatedProducts() {
+            var grid = document.getElementById('q-related-grid');
+            var section = document.getElementById('q-related-products');
+            if (!grid || !section) return;
+
+            // Tray Marina: article.product-card with data-ga4-* attributes
+            var items = document.querySelectorAll('.section_related_products article.product-card, .showroom-swiper article.product-card');
+            if (!items.length) items = document.querySelectorAll('article.product-card');
+            var products = [];
+
+            items.forEach(function(item) {
+                if (products.length >= 3) return;
+                var name = item.getAttribute('data-ga4-name') || '';
+                var price = item.getAttribute('data-ga4-price') || '';
+                if (price) price = 'R$ ' + parseFloat(price).toLocaleString('pt-BR', {minimumFractionDigits:2});
+                // Image from .image-lazy-container data-src
+                var imgContainer = item.querySelector('.image-lazy-container');
+                var imgSrc = imgContainer ? (imgContainer.getAttribute('data-src') || '') : '';
+                // Link
+                var linkEl = item.querySelector('a[href*="oticasmarina"]');
+                var link = linkEl ? linkEl.getAttribute('href') : '';
+                if (name && imgSrc) {
+                    products.push({ name: name, img: imgSrc, link: link });
+                }
+            });
+
+            if (!products.length) return;
+
+            while (grid.firstChild) grid.removeChild(grid.firstChild);
+            products.forEach(function(p) {
+                var a = document.createElement('a');
+                a.className = 'q-related-card';
+                a.href = p.link || '#';
+                a.target = '_blank';
+                var img = document.createElement('img');
+                img.src = p.img;
+                img.alt = p.name;
+                img.loading = 'lazy';
+                var nameEl = document.createElement('span');
+                nameEl.className = 'q-related-card-name';
+                nameEl.textContent = p.name;
+                a.appendChild(img);
+                a.appendChild(nameEl);
+                grid.appendChild(a);
+            });
+            section.style.display = 'block';
+        }
+
         function showError() {
             var lb = document.getElementById('q-loading-box');
             var su = document.getElementById('q-step-photo');
@@ -1067,6 +1134,7 @@
                     finalImg.src = URL.createObjectURL(blob);
                     card.classList.add('is-result');
                     stepResult.style.display = 'flex';
+                    loadRelatedProducts();
                 } else if (res.status === 401 || res.status === 403) {
                     loadingBox.style.display = 'none';
                     stepUpload.style.display = 'flex';
