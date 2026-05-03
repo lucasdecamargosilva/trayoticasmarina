@@ -1126,7 +1126,7 @@
                     if (data.error) {
                         loadingBox.style.display = 'none';
                         stepUpload.style.display = 'flex';
-                        alert(data.error.includes('vencida ou inativa') ? 'App desativado nesta loja' : data.error);
+                        showError();
                         return;
                     }
                 }
@@ -1141,7 +1141,7 @@
                 } else if (res.status === 401 || res.status === 403) {
                     loadingBox.style.display = 'none';
                     stepUpload.style.display = 'flex';
-                    alert('App desativado nesta loja');
+                    showError();
                 } else {
                     throw new Error('HTTP ' + res.status);
                 }
