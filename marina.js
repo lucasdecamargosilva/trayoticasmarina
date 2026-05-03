@@ -1,94 +1,153 @@
 (function () {
-    // ===============================================
-    // 0. CHUMBAR A API KEY AQUI DIRETO NO CÓDIGO
-    // ===============================================
-    const apiKey = "pl_live_2e8a1216deb73095ebfc5be077e83801a0c95ecaa0f00258d352857fe610f03a";
+
+    // ─── 0. CONFIG — Centro Optico Marina (Tray store 1269258) ───────────────────
+    const apiKey = 'pl_live_2e8a1216deb73095ebfc5be077e83801a0c95ecaa0f00258d352857fe610f03a';
     window.PROVOU_LEVOU_API_KEY = apiKey;
 
+    let BUTTON_MODE = 'both';
+    const STORE_ID = '1269258';
+    const API_HOST = 'https://lojista.provoulevou.com.br';
     const WEBHOOK_PROVA = 'https://n8n.segredosdodrop.com/webhook/gerador-oculos';
-    const WEBHOOK_PIX = 'https://n8n.segredosdodrop.com/webhook/cacife-pix';
-    const WEBHOOK_PIX_STATUS = 'https://n8n.segredosdodrop.com/webhook/cacife-pix-status';
-    const WEBHOOK_CHECK_LIMIT = 'https://n8n.segredosdodrop.com/webhook/cacife-check-limit';
-    const SIZES_TOP = ['XXP', 'XP', 'P', 'M', 'G', 'XG', 'XXG', '3XG', '4XG', '5XG'];
-    const SIZES_BOTTOM = ['36/XXP', '38/XP', '40/P', '42/M', '44/G', '46/XG', '48/XXG', '50/3XG', '52/4XG', '54/5XG'];
-    const SIZES_BOTTOM_SW = ['XXP', 'XP', 'P', 'M', 'G', 'XG', 'XXG', '3XG', '4XG', '5XG'];
+    const MARINA_LOGO = 'https://images.tcdn.com.br/img/img_prod/1269258/1701713968_marina_centro_ptico.png';
+    const PROVOU_LOGO = 'https://provoulevou.com.br/assets/provoulevou-logo.png';
+    const STAMP_SRC = 'https://cdn.shopify.com/s/files/1/0636/6334/1746/files/logo_provador.png?v=1772494793';
 
+    // ─── 1. DESIGN FETCH ─────────────────────────────────────────────────────────
+    var _fetchedDesign = null;
+    var CACHE_KEY = 'pl_design_' + STORE_ID;
+    var CACHE_TTL = 5 * 60 * 1000;
 
-    const GRADE = {
-        regular: [49, 51, 54, 57, 61, 62, 64, 66, 70, 73],
-        oversized: [58, 60, 62, 64, 66, 70, 73, 76, 79, 83],
-        oversizedSS: [58, 61, 63, 67, 70, 74, 78, 82, 87, 92],
-        hoodie: [50, 53, 55, 58, 62, 65, 69, 74, 79, 83],
-        boxyHoodie: [61, 77, 78, 79, 80, 81, 82, 83, 84, 85],
-        puffer: [53, 56, 59, 61, 70, 74, 78, 82, 86, 90],
-        vest: [52, 55, 57, 59, 63, 66, 70, 72, 76, 82],
-        boxyHenley: [54, 56, 58, 64, 66, 68, 70, 76, 78, 84],
-        bottomTailoring: [36, 38, 40, 42, 44, 46, 48, 50, 52, 54],
-        bottomSweat: [36, 38, 40, 42, 44, 46, 48, 50, 52, 54],
-        underwear: [36, 38, 40, 42, 44, 46, 48, 50, 52, 54],
-        quadrilTailoring: [48, 50, 52, 56, 58, 60, 62, 64, 66, 68],
-        quadrilSweat: [48, 50, 52, 54, 56, 58, 60, 62, 64, 66],
-        quadrilUnderwear: [50, 52, 54, 56, 58, 60, 62, 64, 66, 68],
-    };
+    function getCachedDesign() {
+        try {
+            var c = localStorage.getItem(CACHE_KEY);
+            if (c) { var p = JSON.parse(c); if (Date.now() - p.timestamp < CACHE_TTL) return p.data; }
+        } catch (e) {}
+        return null;
+    }
 
+    function cacheDesign(data) {
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data, timestamp: Date.now() })); } catch (e) {}
+    }
+
+    function loadGoogleFont(family) {
+        if (!family || family === 'Inter') return;
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + family.replace(/ /g, '+') + ':wght@400;500;600;700;800&display=swap';
+        document.head.appendChild(l);
+    }
+
+    function applyDesignToElement(el, design, isPhotoButton) {
+        if (!el || !design) return;
+        if (design.backgroundColor) el.style.setProperty('background-color', design.backgroundColor, 'important');
+        if (design.textColor) el.style.setProperty('color', design.textColor, 'important');
+        var bw = design.borderWidth !== undefined ? design.borderWidth : 1;
+        el.style.setProperty('border', bw + 'px solid ' + (design.borderColor || '#000'), 'important');
+        if (design.borderRadius !== undefined) el.style.setProperty('border-radius', design.borderRadius + 'px', 'important');
+        if (design.fontFamily) el.style.setProperty('font-family', design.fontFamily + ', sans-serif', 'important');
+        if (design.fontSize) el.style.setProperty('font-size', design.fontSize + 'px', 'important');
+        if (design.fontWeight) el.style.setProperty('font-weight', design.fontWeight, 'important');
+        if (design.textTransform) el.style.setProperty('text-transform', design.textTransform, 'important');
+        if (design.letterSpacing !== undefined) el.style.setProperty('letter-spacing', design.letterSpacing + 'px', 'important');
+        if (design.height !== undefined) {
+            el.style.setProperty('height', design.height + 'px', 'important');
+            if (isPhotoButton) el.style.setProperty('width', design.height + 'px', 'important');
+        }
+        if (design.shadow) {
+            el.style.setProperty('box-shadow', '0 4px 12px rgba(0,0,0,' + (design.shadowIntensity || 0.15) + ')', 'important');
+        } else {
+            el.style.setProperty('box-shadow', 'none', 'important');
+        }
+        if (isPhotoButton) el.style.setProperty('filter', 'none', 'important');
+        if (design.gradient) {
+            el.style.setProperty('background', 'linear-gradient(' + design.gradient.direction + ',' + design.gradient.colors[0] + ',' + design.gradient.colors[1] + ')', 'important');
+        }
+        if (design.customCSS) el.style.cssText += ';' + design.customCSS;
+    }
+
+    function applyDesignToButtons() {
+        if (!_fetchedDesign) return;
+        var d = _fetchedDesign;
+
+        var buyBtn = document.querySelector('.q-btn-inline-provador');
+        if (buyBtn && d.buy_button) {
+            applyDesignToElement(buyBtn, d.buy_button, false);
+            if (d.buy_button.label) {
+                var tn = buyBtn.lastChild;
+                if (tn && tn.nodeType === 3) tn.textContent = d.buy_button.label;
+            }
+        }
+
+        var photoBtn = document.querySelector('.q-btn-trigger-ia');
+        if (photoBtn && d.photo_button) {
+            applyDesignToElement(photoBtn, d.photo_button, true);
+            photoBtn.style.setProperty('position', 'absolute', 'important');
+            photoBtn.style.setProperty('top', '15px', 'important');
+            photoBtn.style.setProperty('right', '15px', 'important');
+            photoBtn.style.setProperty('z-index', '9999', 'important');
+        }
+
+        if (d.button_mode) BUTTON_MODE = d.button_mode;
+        if (BUTTON_MODE === 'image') {
+            var ib = document.querySelector('.q-btn-inline-provador');
+            if (ib) ib.style.display = 'none';
+        } else if (BUTTON_MODE === 'buy') {
+            var pb = document.querySelector('.q-btn-trigger-ia');
+            if (pb) pb.style.display = 'none';
+        }
+
+        if (d.custom_logo) {
+            var logoEl = document.querySelector('#q-header-provador img');
+            if (logoEl) logoEl.src = d.custom_logo;
+        }
+    }
+
+    function fetchDesignFromAPI() {
+        if (!STORE_ID || !API_HOST) return Promise.resolve(null);
+        var cached = getCachedDesign();
+        if (cached) return Promise.resolve(cached);
+        return fetch(API_HOST + '/api/design/' + STORE_ID)
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data) return null;
+                cacheDesign(data);
+                if (data.photo_button && data.photo_button.fontFamily) loadGoogleFont(data.photo_button.fontFamily);
+                if (data.buy_button && data.buy_button.fontFamily) loadGoogleFont(data.buy_button.fontFamily);
+                return data;
+            })
+            .catch(function() { return null; });
+    }
+
+    fetchDesignFromAPI().then(function(d) {
+        if (!d) return;
+        _fetchedDesign = d;
+        applyDesignToButtons();
+    });
+
+    // ─── 2. UTILS ─────────────────────────────────────────────────────────────────
+    let currentProduct = { category: 'top', fit: 'regular' };
 
     function detectProduct(name) {
-        const n = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        if (/tailoring/.test(n) || /\d\/\d\s*short/.test(n) || /\b(1\/5|2\/5|3\/5|4\/5)\b/.test(n)) return { category: 'bottom', fit: 'tailoring' };
-        if (/underwear|cueca/.test(n)) return { category: 'bottom', fit: 'underwear' };
-        if (/sweatpant|sweatshort|sweat pant|sweat short|calca|bermuda/.test(n)) return { category: 'bottom', fit: 'sweat' };
-        if (/henley/.test(n)) return { category: 'top', fit: 'boxyHenley' };
-        if (/boxy.*(hoodie|crewneck|crew)/.test(n) || /(hoodie|crewneck|crew).*boxy/.test(n)) return { category: 'top', fit: 'boxyHoodie' };
+        const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if (/tailoring/.test(n) || /calca|bermuda|sweatpant/.test(n)) return { category: 'bottom', fit: 'tailoring' };
+        if (/boxy.*(hoodie|crewneck)/.test(n)) return { category: 'top', fit: 'boxyHoodie' };
         if (/puffer|jacket/.test(n)) return { category: 'top', fit: 'puffer' };
         if (/vest/.test(n)) return { category: 'top', fit: 'vest' };
-        if (/(hoodie|hoodie zip|half zip|crewneck|crew neck)/.test(n) && !/oversized|boxy|short sleeve/.test(n)) return { category: 'top', fit: 'hoodie' };
-        if (/oversized.*(hoodie|crewneck|crew|short sleeve)/.test(n) || /short sleeve.*(hoodie|crewneck)/.test(n)) return { category: 'top', fit: 'oversizedSS' };
-        if (/oversized|boxy tee|2\/4/.test(n)) return { category: 'top', fit: 'oversized' };
+        if (/(hoodie|half zip|crewneck)/.test(n) && !/oversized|boxy/.test(n)) return { category: 'top', fit: 'hoodie' };
+        if (/oversized/.test(n)) return { category: 'top', fit: 'oversized' };
         return { category: 'top', fit: 'regular' };
     }
 
-
-    function estimarTorax(altura, peso) {
-        if (altura < 3) altura *= 100;
-        let circ = 0.65 * peso + 56;
-        const imc = peso / Math.pow(altura / 100, 2);
-        if (imc > 30) circ += 4; else if (imc > 25) circ += 2;
-        return circ;
-    }
-
-
-    function findClosest(arr, val) {
-        let idx = 0, minDiff = Infinity;
-        arr.forEach((v, i) => { const d = Math.abs(v - val); if (d < minDiff) { minDiff = d; idx = i; } });
-        return idx;
-    }
-
-
-    let recommendedSize = 'M';
-    let currentProduct = { category: 'top', fit: 'regular' };
-
-    function calculateFinalSize() {
-        // Feature desativada: não faz mais cálculos de tamanho
-        return;
-    }
-
-
-    // ─── LOCK / UNLOCK SCROLL DA PÁGINA ──────────────────────────────────────────
-
-
+    // ─── 3. SCROLL LOCK ──────────────────────────────────────────────────────────
     let scrollY = 0;
-
-
     function lockBodyScroll() {
         scrollY = window.scrollY;
         document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollY}px`;
+        document.body.style.top = '-' + scrollY + 'px';
         document.body.style.left = '0';
         document.body.style.right = '0';
         document.body.style.overflowY = 'scroll';
     }
-
-
     function unlockBodyScroll() {
         document.body.style.position = '';
         document.body.style.top = '';
@@ -98,10 +157,7 @@
         window.scrollTo(0, scrollY);
     }
 
-
-    // ─── ESTILOS ──────────────────────────────────────────────────────────────────
-
-
+    // ─── 4. ESTILOS (design Califa) ───────────────────────────────────────────────
     const styles = `
         /* ── Fontes ── */
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
@@ -121,7 +177,7 @@
         /* ── Trigger (selo sobre foto) ── */
         @keyframes q-shake { 0%,50%,100%{transform:rotate(0deg)} 10%,30%{transform:rotate(-10deg)} 20%,40%{transform:rotate(10deg)} }
         .q-btn-trigger-ia {
-            position: absolute; top: 15px; right: 15px; z-index: 9999;
+            position: absolute; top: 14px; right: 14px; z-index: 100;
             background: none; border: none; padding: 0; cursor: pointer;
             width: 70px; height: 70px;
             display: flex; align-items: center; justify-content: center;
@@ -507,485 +563,336 @@
             flex-shrink: 0; border-top: 1px solid var(--c-line); text-decoration: none;
         }
         .q-powered-footer span { font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--c-muted); }
-
-        /* ── Marina brand overrides: teal #6dadbc primary, pink #e54e88 accent ── */
+        /* ── Marina: teal #6dadbc + pink #e54e88 ── */
+        :root { --c-surface: #f0fafa; --c-line: #b8dde8; }
         .q-btn-black { background: #6dadbc !important; }
         .q-btn-black:hover:not(:disabled) { background: #5b9daa !important; }
         .q-btn-black:disabled { background: #b8dde8 !important; }
         .q-face-corner { border-color: #6dadbc !important; }
         .q-terms-row a { color: #e54e88 !important; }
-        .q-upload-btn:hover { border-color: #6dadbc !important; color: #6dadbc !important; background: #e8f7fa !important; }
-        .q-btn-outline:hover { border-color: #6dadbc !important; color: #6dadbc !important; background: #e8f7fa !important; }
+        .q-upload-btn:hover { border-color: #6dadbc; color: #6dadbc; }
+        .q-btn-outline:hover { border-color: #6dadbc; color: #6dadbc; }
         .q-input:focus { border-color: #6dadbc !important; }
         .q-loading-bar > div { background: #6dadbc !important; }
         .q-tip-box { background: #e8f7fa !important; border-left-color: #6dadbc !important; color: #2d6b7a !important; }
         .q-tip-box i { color: #6dadbc !important; }
         #q-related-products h4 { color: #6dadbc !important; }
-        .q-pix-approved { color: #6dadbc !important; }
         .q-quantic-logo { height: 20px; filter: brightness(0); opacity: 0.5; }
     `;
 
-
-    // ─── IMAGEM DO BOTÃO (trigger) ─────────────────────────────────────────────
-    const stampImageHTML = `<img src="https://cdn.shopify.com/s/files/1/0636/6334/1746/files/logo_provador.png?v=1772494793" alt="Provador Virtual" style="width:100%;height:100%;object-fit:contain;">`;
-
-
-
-    // ─── HTML ─────────────────────────────────────────────────────────────────────
-
-
-    const html = `
-        <div id="q-modal-ia">
-            <div class="q-card-ia">
-                <button type="button" class="q-close-ia" id="q-close-btn">&times;</button>
-                <div class="q-content-scroll">
-
-                    <!-- Main step -->
-                    <div id="q-step-photo">
-                        <div id="q-header-provador">
-                            <h1>Provador Virtual</h1>
-                            <img
-                                src="https://images.tcdn.com.br/img/img_prod/1269258/1701713968_marina_centro_ptico.png"
-                                alt="Oticas Marina"
-                                style="height:48px;width:auto;"
-                            />
-                        </div>
-
-                        <!-- WhatsApp -->
-                        <div class="q-phone-wrap">
-                            <span class="q-field-label">Seu WhatsApp</span>
-                            <input type="tel" id="q-phone" class="q-input" placeholder="(11) 99999-9999" maxlength="15">
-                            <div id="q-phone-error" class="q-status-msg">N&#250;mero inv&#225;lido</div>
-                        </div>
-
-                        <!-- Photo section -->
-                        <p class="q-section-label">Envie sua foto</p>
-                        <div class="q-tip-box">
-                            <i class="ph ph-lightbulb"></i>
-                            <span>Use uma foto n&#237;tida, de frente, com boa ilumina&#231;&#227;o.</span>
-                        </div>
-
-                        <!-- Face frame -->
-                        <div class="q-face-frame" id="q-face-frame">
-                            <div class="q-face-corner q-face-corner-tl"></div>
-                            <div class="q-face-corner q-face-corner-tr"></div>
-                            <div class="q-face-corner q-face-corner-bl"></div>
-                            <div class="q-face-corner q-face-corner-br"></div>
-                            <img id="q-pre-img" alt="Sua foto">
-                            <div class="q-face-placeholder" id="q-face-placeholder">
-                                <i class="ph ph-user-circle" style="font-size:80px;color:#d4d4d4;"></i>
-                            </div>
-                        </div>
-
-                        <!-- Upload buttons -->
-                        <div class="q-upload-btns">
-                            <button class="q-upload-btn" id="q-btn-camera">
-                                <i class="ph ph-camera"></i> Tirar foto
-                            </button>
-                            <button class="q-upload-btn" id="q-btn-gallery">
-                                <i class="ph ph-image"></i> Da galeria
-                            </button>
-                            <input type="file" id="q-camera-input" accept="image/*" capture="user" style="display:none">
-                            <input type="file" id="q-gallery-input" accept="image/*" style="display:none">
-                        </div>
-
-                        <!-- Terms -->
-                        <label class="q-terms-row">
-                            <input type="checkbox" id="q-accept-terms">
-                            <span>Concordo com os <a href="http://provoulevou.com.br/termos.html" target="_blank">Termos e Condi&#231;&#245;es</a></span>
-                        </label>
-
-                        <button class="q-btn-black" id="q-btn-generate" disabled>Provar &#243;culos</button>
-                    </div>
-
-                    <!-- PIX -->
-                    <div id="q-step-pix">
-                        <h2>Prova Extra</h2>
-                        <p class="q-pix-subtitle">Limite de 3 provas atingido.<br>Pague R$1 via PIX para mais uma:</p>
-                        <div class="q-pix-qr"><img id="q-pix-qr-img" alt="QR Code PIX"></div>
-                        <div class="q-pix-copiacola">
-                            <input type="text" id="q-pix-code" readonly placeholder="C&#243;digo PIX...">
-                            <button id="q-pix-copy-btn">Copiar</button>
-                        </div>
-                        <div id="q-pix-status-msg" class="q-pix-status q-pix-waiting">Aguardando pagamento...</div>
-                        <p class="q-pix-cancel" id="q-pix-cancel">Cancelar</p>
-                    </div>
-
-                    <!-- Loading -->
-                    <div id="q-loading-box">
-                        <div class="q-loading-texts">
-                            <div class="q-loading-t1">Gerando sua prova...</div>
-                            <a href="https://provoulevou.com.br" target="_blank" class="q-loading-t2">
-                                <span>Powered by</span>
-                                <img src="https://provoulevou.com.br/assets/provoulevou-logo.png" alt="Provou Levou">
-                            </a>
-                        </div>
-                        <div class="q-loading-bar"><div></div></div>
-                    </div>
-
-                    <!-- Resultado -->
-                    <div id="q-step-result">
-                        <span class="q-res-title">Veja como ficou em voc&ecirc; &#x2728;</span>
-                        <div id="q-result-img-col">
-                            <img id="q-final-view-img">
-                        </div>
-                        <div id="q-result-actions-col">
-                            <button class="q-btn-outline" id="q-btn-back">Voltar ao Produto</button>
-                            <button class="q-btn-black q-res-mobile-only" id="q-retry-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <i class="ph ph-camera"></i> Tentar outra foto
-                            </button>
-                            <div id="q-related-products" style="display:none;">
-                                <h4>Veja tamb&eacute;m</h4>
-                                <div class="q-related-grid" id="q-related-grid"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Erro -->
-                    <div id="q-step-error">
-                        <h2>Provador fora do ar</h2>
-                        <p>Voltamos em breve &#x1F64F;</p>
-                        <button class="q-btn-outline" id="q-error-back">Voltar ao Produto</button>
-                    </div>
-
-                </div>
-                <a href="https://provoulevou.com.br" target="_blank" class="q-powered-footer">
-                    <span>Powered by</span>
-                    <img src="https://provoulevou.com.br/assets/provoulevou-logo.png" class="q-quantic-logo" alt="Provou Levou">
-                </a>
-            </div>
-        </div>
-    `;
-
-
-    // ─── INIT ─────────────────────────────────────────────────────────────────────
-
-
+    // ─── 5. INIT ──────────────────────────────────────────────────────────────────
     function init() {
-        // --- FILTRO DE CATEGORIA (HAT) ---
-        const productNameNormalized = (document.querySelector('h1.product__title,.product-single__title,h1')?.innerText || document.title).toUpperCase();
-        if (productNameNormalized.includes('HAT')) {
-            return;
+
+        // Fonts + Phosphor Icons
+        var fl = document.createElement('link');
+        fl.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+        fl.rel = 'stylesheet';
+        document.head.appendChild(fl);
+        if (!window.phosphorIconsLoaded) {
+            var ph = document.createElement('script');
+            ph.src = 'https://unpkg.com/@phosphor-icons/web';
+            document.head.appendChild(ph);
+            window.phosphorIconsLoaded = true;
         }
 
-        // Fontes (async, não bloqueia render)
-        const fontLink = document.createElement('link');
-        fontLink.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap';
-        fontLink.rel = 'stylesheet';
-        document.head.appendChild(fontLink);
+        // Styles
+        var st = document.createElement('style');
+        st.textContent = styles;
+        document.head.appendChild(st);
 
-        // Phosphor Icons — carregado lazily na primeira abertura do modal
-        // (não carrega na init para não impactar o tempo de carregamento da página)
+        // Modal HTML — built via DOM (no innerHTML with untrusted input)
+        var modal = document.createElement('div');
+        modal.id = 'q-modal-ia';
 
-        const styleTag = document.createElement('style');
-        styleTag.textContent = styles;
-        document.head.appendChild(styleTag);
+        var card = document.createElement('div');
+        card.className = 'q-card-ia';
 
-        const modalContainer = document.createElement('div');
-        modalContainer.innerHTML = html;
-        document.body.appendChild(modalContainer);
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'q-close-ia';
+        closeBtn.id = 'q-close-btn';
+        closeBtn.textContent = '×';
+        card.appendChild(closeBtn);
 
+        var scroll = document.createElement('div');
+        scroll.className = 'q-content-scroll';
 
-        // ── Botão imagem PNG ──
-        const openBtn = document.createElement('button');
+        // Header
+        var header = document.createElement('div');
+        header.id = 'q-header-provador';
+        var h1 = document.createElement('h1');
+        h1.textContent = 'Provador Virtual';
+        header.appendChild(h1);
+        var marinaImg = document.createElement('img');
+        marinaImg.src = MARINA_LOGO;
+        marinaImg.alt = 'Centro Optico Marina';
+        marinaImg.style.cssText = 'height:36px;width:auto;object-fit:contain;';
+        marinaImg.onerror = function() { this.style.display = 'none'; };
+        header.appendChild(marinaImg);
+        scroll.appendChild(header);
+
+        // Step upload
+        var stepUpload = document.createElement('div');
+        stepUpload.id = 'q-step-upload';
+
+        var phoneRow = document.createElement('div');
+        phoneRow.className = 'q-form-row';
+        var phoneLbl = document.createElement('label');
+        phoneLbl.textContent = 'Seu Celular';
+        phoneRow.appendChild(phoneLbl);
+        var phoneInput = document.createElement('input');
+        phoneInput.type = 'tel';
+        phoneInput.id = 'q-phone';
+        phoneInput.className = 'q-input';
+        phoneInput.placeholder = '(11) 99999-9999';
+        phoneInput.maxLength = 15;
+        phoneRow.appendChild(phoneInput);
+        var phoneErr = document.createElement('div');
+        phoneErr.id = 'q-phone-error';
+        phoneErr.className = 'q-status-msg';
+        phoneErr.textContent = 'Insira um número válido';
+        phoneRow.appendChild(phoneErr);
+        stepUpload.appendChild(phoneRow);
+
+        var uploadRow = document.createElement('div');
+        uploadRow.id = 'q-upload-row';
+        var trigUpload = document.createElement('div');
+        trigUpload.id = 'q-trigger-upload';
+        var camIcon = document.createElement('i');
+        camIcon.className = 'ph ph-camera-plus';
+        trigUpload.appendChild(camIcon);
+        var camSpan = document.createElement('span');
+        camSpan.textContent = 'Enviar Foto';
+        trigUpload.appendChild(camSpan);
+        var realInput = document.createElement('input');
+        realInput.type = 'file';
+        realInput.id = 'q-real-input';
+        realInput.accept = 'image/*';
+        realInput.style.display = 'none';
+        trigUpload.appendChild(realInput);
+        uploadRow.appendChild(trigUpload);
+        var preView = document.createElement('div');
+        preView.id = 'q-pre-view';
+        var preImg = document.createElement('img');
+        preImg.id = 'q-pre-img';
+        preView.appendChild(preImg);
+        uploadRow.appendChild(preView);
+        stepUpload.appendChild(uploadRow);
+
+        var termsLabel = document.createElement('label');
+        termsLabel.className = 'q-terms-row';
+        var termsCheck = document.createElement('input');
+        termsCheck.type = 'checkbox';
+        termsCheck.id = 'q-accept-terms';
+        termsLabel.appendChild(termsCheck);
+        var termsSpan = document.createElement('span');
+        termsSpan.textContent = 'Ao continuar, concordo com os ';
+        var termsLink = document.createElement('a');
+        termsLink.href = 'http://provoulevou.com.br/termos.html';
+        termsLink.target = '_blank';
+        termsLink.textContent = 'Termos e Condições';
+        termsSpan.appendChild(termsLink);
+        termsLabel.appendChild(termsSpan);
+        stepUpload.appendChild(termsLabel);
+
+        var genBtn = document.createElement('button');
+        genBtn.className = 'q-btn-black';
+        genBtn.id = 'q-btn-generate';
+        genBtn.disabled = true;
+        genBtn.textContent = 'Provar óculos';
+        stepUpload.appendChild(genBtn);
+        scroll.appendChild(stepUpload);
+
+        // Loading
+        var loadingBox = document.createElement('div');
+        loadingBox.id = 'q-loading-box';
+        loadingBox.style.display = 'none';
+        var loadingTxt = document.createElement('div');
+        loadingTxt.textContent = 'Gerando Prova Virtual...';
+        loadingBox.appendChild(loadingTxt);
+        var loadingBar = document.createElement('div');
+        loadingBar.className = 'q-loading-bar';
+        var loadingFill = document.createElement('div');
+        loadingBar.appendChild(loadingFill);
+        loadingBox.appendChild(loadingBar);
+        scroll.appendChild(loadingBox);
+
+        // Result
+        var stepResult = document.createElement('div');
+        stepResult.id = 'q-step-result';
+        var resultImgCol = document.createElement('div');
+        resultImgCol.id = 'q-result-img-col';
+        var finalImg = document.createElement('img');
+        finalImg.id = 'q-final-view-img';
+        resultImgCol.appendChild(finalImg);
+        var resultActCol = document.createElement('div');
+        resultActCol.id = 'q-result-actions-col';
+        var resTitle = document.createElement('span');
+        resTitle.className = 'q-res-title';
+        resTitle.textContent = 'Provador Virtual';
+        resultActCol.appendChild(resTitle);
+        var backBtn = document.createElement('button');
+        backBtn.className = 'q-btn-outline';
+        backBtn.id = 'q-btn-back';
+        backBtn.textContent = 'Voltar ao Produto';
+        resultActCol.appendChild(backBtn);
+        var retryBtn = document.createElement('p');
+        retryBtn.className = 'q-res-mobile-only';
+        retryBtn.id = 'q-retry-btn';
+        retryBtn.textContent = 'Tentar outra foto';
+        resultActCol.appendChild(retryBtn);
+        stepResult.appendChild(resultImgCol);
+        stepResult.appendChild(resultActCol);
+        scroll.appendChild(stepResult);
+
+        // Error step
+        var stepError = document.createElement('div');
+        stepError.id = 'q-step-error';
+        stepError.style.display = 'none';
+        var errH2 = document.createElement('h2');
+        errH2.textContent = 'Provador fora do ar';
+        var errP = document.createElement('p');
+        errP.textContent = 'Voltamos em breve 🙏';
+        var errBtn = document.createElement('button');
+        errBtn.className = 'q-btn-outline';
+        errBtn.id = 'q-error-back';
+        errBtn.textContent = 'Voltar ao Produto';
+        stepError.appendChild(errH2);
+        stepError.appendChild(errP);
+        stepError.appendChild(errBtn);
+        scroll.appendChild(stepError);
+
+        card.appendChild(scroll);
+
+        // Footer
+        var footer = document.createElement('a');
+        footer.href = 'https://provoulevou.com.br';
+        footer.target = '_blank';
+        footer.className = 'q-powered-footer';
+        var footerSpan = document.createElement('span');
+        footerSpan.textContent = 'Powered by';
+        footer.appendChild(footerSpan);
+        var footerLogo = document.createElement('img');
+        footerLogo.src = PROVOU_LOGO;
+        footerLogo.className = 'q-quantic-logo';
+        footerLogo.alt = 'Provou Levou';
+        footer.appendChild(footerLogo);
+        card.appendChild(footer);
+
+        modal.appendChild(card);
+        document.body.appendChild(modal);
+
+        // ── Trigger button (stamp na foto) ────────────────────────────────────────
+        var openBtn = document.createElement('button');
         openBtn.className = 'q-btn-trigger-ia';
         openBtn.id = 'q-open-ia';
         openBtn.setAttribute('aria-label', 'Abrir Provador Virtual');
-        openBtn.innerHTML = stampImageHTML;
+        var stampImg = document.createElement('img');
+        stampImg.src = STAMP_SRC;
+        stampImg.alt = 'Provador Virtual';
+        stampImg.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+        openBtn.appendChild(stampImg);
 
-
-        const imgContainers = ['.js-product-slide', '.product-image-column', '.js-swiper-product', '[data-store^="product-image-"]', '.product__media-wrapper', '.product-gallery__media', '.product__media', '.product-image-main', '.product-media-container', '[data-media-id]', '.product__media-item', '.product-gallery', '.product-single__media', '.media-gallery'];
-
-        function tryPlaceTriggerBtn() {
-            // 1ª prioridade: container que tenha <img> dentro (evita cair em slide de vídeo)
-            for (const sel of imgContainers) {
-                const els = document.querySelectorAll(sel);
-                for (const el of els) {
-                    if (el.querySelector('img')) {
-                        if (window.getComputedStyle(el).position === 'static') el.style.position = 'relative';
-                        el.appendChild(openBtn);
-                        return true;
-                    }
+        if (BUTTON_MODE === 'image' || BUTTON_MODE === 'both') {
+            var imgSels = [
+                '.frame_slider_principal', '.carousel_gallery', '.product_gallery',
+                '.produto-imagem', '.product-image', '.product-images',
+                '.image-show', '.box-gallery', '.product-colum-left',
+                '.product__media-wrapper', '.product-gallery__media', '.product__media',
+                '.product-image-main', '.product-media-container',
+                '.product__media-item', '.product-gallery', '.product-single__media', '.media-gallery'
+            ];
+            var placed = false;
+            for (var i = 0; i < imgSels.length; i++) {
+                var imgEl = document.querySelector(imgSels[i]);
+                if (imgEl) {
+                    if (window.getComputedStyle(imgEl).position === 'static') imgEl.style.position = 'relative';
+                    imgEl.appendChild(openBtn);
+                    placed = true;
+                    break;
                 }
             }
-            // 2ª prioridade: qualquer container correspondente
-            for (const sel of imgContainers) {
-                const el = document.querySelector(sel);
-                if (el) {
-                    if (window.getComputedStyle(el).position === 'static') el.style.position = 'relative';
-                    el.appendChild(openBtn);
-                    return true;
-                }
+            if (!placed) {
+                openBtn.style.cssText = 'position:fixed;bottom:100px;right:20px;z-index:100;width:72px;height:72px;background:none;border:none;padding:0;cursor:pointer;';
+                document.body.appendChild(openBtn);
             }
-            return false;
         }
 
-        if (!tryPlaceTriggerBtn()) {
-            // Container não pronto ainda (ex: após F5 no mobile).
-            // Observa DOM até 5s aguardando o container aparecer.
-            const observer = new MutationObserver(() => {
-                if (tryPlaceTriggerBtn()) observer.disconnect();
+        // ── Inline button (acima do comprar) ──────────────────────────────────────
+        if (BUTTON_MODE === 'buy' || BUTTON_MODE === 'both') {
+            var inlineBtn = document.createElement('button');
+            inlineBtn.className = 'q-btn-inline-provador';
+            inlineBtn.type = 'button';
+            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('stroke-width', '1.5');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+            var p1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            p1.setAttribute('d', 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2');
+            var c1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            c1.setAttribute('cx', '12'); c1.setAttribute('cy', '7'); c1.setAttribute('r', '4');
+            svg.appendChild(p1); svg.appendChild(c1);
+            inlineBtn.appendChild(svg);
+            inlineBtn.appendChild(document.createTextNode('Provador Virtual'));
+
+            inlineBtn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                currentProduct = detectProduct(document.querySelector('h1.product-name, h1.product__title, .product-single__title, h1')?.innerText || document.title);
+                openModal();
             });
-            observer.observe(document.body, { childList: true, subtree: true });
 
-            setTimeout(() => {
-                observer.disconnect();
-                if (!openBtn.isConnected) {
-                    openBtn.style.cssText = 'position:fixed;bottom:30px;right:20px;top:auto;z-index:100;';
-                    document.body.appendChild(openBtn);
-                }
-            }, 5000);
-        }
+            var buySels = [
+                '.frame_product_action_button', '[data-buy-action-button]', '.buy_action_button',
+                '.product-buy-button', '.wrapper-btn-buy', '.button-buy', '.buy-button', '#buy-button',
+                '.botao-comprar', '#botao-comprar', '.product-buy', '.btn-buy',
+                'button[name="buy"]', 'input[name="buy"]',
+                '.product-colum-right .box-buy', '.box-buy',
+                '.product-action', '.product-actions', '.add-to-cart', '#addToCart'
+            ];
+            for (var j = 0; j < buySels.length; j++) {
+                var bel = document.querySelector(buySels[j]);
+                if (bel) { bel.parentNode.insertBefore(inlineBtn, bel); break; }
+            }
 
-
-        const modal = document.getElementById('q-modal-ia');
-
-        // ── Botão inline acima do botão de compra ──
-        const inlineBtn = document.createElement('button');
-        inlineBtn.className = 'q-btn-inline-provador';
-        inlineBtn.type = 'button';
-
-        const inlineSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        inlineSvg.setAttribute('viewBox', '0 0 24 24');
-        inlineSvg.setAttribute('fill', 'none');
-        inlineSvg.setAttribute('stroke', 'currentColor');
-        inlineSvg.setAttribute('stroke-width', '1.5');
-        inlineSvg.setAttribute('stroke-linecap', 'round');
-        inlineSvg.setAttribute('stroke-linejoin', 'round');
-        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path1.setAttribute('d', 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2');
-        const circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle1.setAttribute('cx', '12');
-        circle1.setAttribute('cy', '7');
-        circle1.setAttribute('r', '4');
-        inlineSvg.appendChild(path1);
-        inlineSvg.appendChild(circle1);
-        inlineBtn.appendChild(inlineSvg);
-
-        const inlineBtnText = document.createTextNode('Provador Virtual');
-        inlineBtn.appendChild(inlineBtnText);
-
-        inlineBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const prodName = document.querySelector('h1.product__title,.product-single__title,h1')?.innerText || document.title;
-            applyProduct(detectProduct(prodName));
-            populateImageSelector();
-            openModal();
-        });
-
-        // Posiciona acima do botão de compra
-        const buyBtn = document.querySelector('.js-addtocart, .btn-add-to-cart, [data-component="product.add-to-cart"]');
-        if (buyBtn) {
-            buyBtn.parentNode.insertBefore(inlineBtn, buyBtn);
-        } else {
-            const variantsContainer = document.querySelector('.js-product-variants');
-            if (variantsContainer) {
-                variantsContainer.parentNode.insertBefore(inlineBtn, variantsContainer.nextSibling);
+            if (BUTTON_MODE === 'buy') {
+                openBtn.style.display = 'none';
+                document.body.appendChild(openBtn);
             }
         }
-        const genBtn      = document.getElementById('q-btn-generate');
-        const nextBtn     = null; // single-step flow — no next button
-        const phoneStep   = null;
-        const photoStep   = document.getElementById('q-step-photo');
-        const uploadStep  = photoStep; // alias for PIX/error refs
 
-        const closeBtn    = document.getElementById('q-close-btn');
-        const backBtn     = document.getElementById('q-btn-back');
-        const retryBtn    = document.getElementById('q-retry-btn');
-        const cameraInput = document.getElementById('q-camera-input');
-        const galleryInput= document.getElementById('q-gallery-input');
-        const phoneInput  = document.getElementById('q-phone');
-        const preImg      = document.getElementById('q-pre-img');
-        const facePlaceholder = document.getElementById('q-face-placeholder');
+        applyDesignToButtons();
 
-        // keep realInput alias so PIX code still works
-        const realInput   = galleryInput;
+        // ── Eventos ───────────────────────────────────────────────────────────────
+        function openModal()  { modal.style.display = 'flex'; lockBodyScroll(); }
+        function closeModal() { modal.style.display = 'none'; unlockBodyScroll(); }
 
-        let userPhoto = null;
-        let selectedProductImgUrl = '';
-
-        // Upgrade Nuvemshop CDN URLs to 1024px version
-        function upgradeImgUrl(url) {
-            if (url.includes('mitiendanube.com') || url.includes('nuvemshop.com')) {
-                return url.replace(/-\d+-\d+\.webp/, '-1024-1024.webp');
-            }
-            return url;
-        }
-
-        function extractImages() {
-            const containersSelectors = '.js-product-slide, .product-image-column, .js-swiper-product, [data-store^="product-image-"], .product__media-wrapper, .product-gallery__media, .product__media, .product-image-main, .product-media-container, [data-media-id], .product__media-item, .product-gallery, .product-single__media, .media-gallery, [data-component="product.gallery"], .swiper-slide:not(.swiper-slide-duplicate), .slider-wrapper';
-            const possibleContainers = Array.from(document.querySelectorAll(containersSelectors));
-            let imgEls = [];
-            possibleContainers.forEach(c => {
-                if (!c.closest('#q-modal-ia')) {
-                    const foundImgs = c.querySelectorAll('img');
-                    imgEls.push(...Array.from(foundImgs));
-                }
-            });
-            let uniqueImgs = [];
-            imgEls.forEach(img => {
-                let src = img.dataset?.src || img.getAttribute('data-src') || img.src;
-
-                if (src && src.includes('data:image')) {
-                    const parentA = img.closest('a');
-                    if (parentA && parentA.href && !parentA.href.includes('javascript:')) {
-                        src = parentA.href;
-                    } else if (img.getAttribute('data-srcset')) {
-                        src = img.getAttribute('data-srcset').split(',')[0].trim().split(' ')[0];
-                    }
-                }
-
-                if (!src || src.includes('data:image')) return;
-
-                const lowerSrc = src.toLowerCase();
-                const invalidKeywords = ['provador', 'logo', 'provoulevou', 'icon', 'play', 'video', 'transparent', 'placeholder', 'blank', 'spacer'];
-                if (invalidKeywords.some(kw => lowerSrc.includes(kw))) return;
-
-                // Filter out tiny images (1x1 pixels, spacers, etc.)
-                if (img.naturalWidth > 0 && img.naturalWidth < 50) return;
-                if (img.naturalHeight > 0 && img.naturalHeight < 50) return;
-
-                let cleanSrc = src.split('?')[0].replace(/-\d+-\d+\.webp|_\d+x\d+/, '');
-
-                // Upgrade to 1024px version
-                src = upgradeImgUrl(src);
-
-                if (!uniqueImgs.some(u => u.split('?')[0].replace(/-\d+-\d+\.webp|_\d+x\d+/, '') === cleanSrc)) {
-                    uniqueImgs.push(src);
-                }
-            });
-            if (uniqueImgs.length === 0) {
-                const og = document.querySelector('meta[property="og:image"]')?.content;
-                if (og) uniqueImgs.push(upgradeImgUrl(og));
-            }
-            return uniqueImgs.slice(0, 2);
-        }
-
-        function populateImageSelector() {
-            const imgs = extractImages();
-            const group = document.getElementById('q-photo-selector-group');
-            if (group) group.style.display = 'none';
-            selectedProductImgUrl = imgs[0] || '';
-        }
-
-        function openModal() {
-            // Lazy-load Phosphor Icons na primeira abertura
-            if (!window.phosphorIconsLoaded) {
-                var ph = document.createElement('script');
-                ph.src = 'https://unpkg.com/@phosphor-icons/web';
-                document.head.appendChild(ph);
-                window.phosphorIconsLoaded = true;
-            }
-            modal.style.display = 'flex';
-            lockBodyScroll();
-        }
-
-
-        function closeModal() {
-            modal.style.display = 'none';
-            unlockBodyScroll();
-        }
-
-
-        function applyProduct(product) {
-            currentProduct = product;
-        }
-
-
-        openBtn.onclick = (e) => {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            const prodName = document.querySelector('h1.product__title,.product-single__title,h1')?.innerText || document.title;
-            applyProduct(detectProduct(prodName));
-            populateImageSelector();
+        openBtn.onclick = function(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            currentProduct = detectProduct(document.querySelector('h1.product-name, h1.product__title, .product-single__title, h1')?.innerText || document.title);
             openModal();
         };
 
-
         closeBtn.onclick = () => closeModal();
-        backBtn.onclick = () => closeModal();
+        backBtn.onclick  = () => closeModal();
+        modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
 
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
-        });
-
-
-        retryBtn.onclick = () => {
-            document.getElementById('q-step-result').style.display = 'none';
-            photoStep.style.display = 'flex';
-            document.querySelector('.q-card-ia').classList.remove('is-result');
+        retryBtn.onclick = function() {
+            stepResult.style.display = 'none';
+            stepUpload.style.display = 'flex';
+            card.classList.remove('is-result');
             userPhoto = null;
-            preImg.style.display = 'none';
-            if (facePlaceholder) facePlaceholder.style.display = 'flex';
+            preView.style.display = 'none';
             checkFields();
         };
 
-        // Camera / gallery buttons
-        document.getElementById('q-btn-camera').onclick = function() { cameraInput.click(); };
-        document.getElementById('q-btn-gallery').onclick = function() { galleryInput.click(); };
-        document.getElementById('q-face-frame').onclick = function() { galleryInput.click(); };
-
-        function loadRelatedProducts() {
-            var grid = document.getElementById('q-related-grid');
-            var section = document.getElementById('q-related-products');
-            if (!grid || !section) return;
-
-            var items = document.querySelectorAll('.js-swiper-related .js-item-product');
-            if (!items.length) items = document.querySelectorAll('.js-item-product');
-            var products = [];
-
-            items.forEach(function(item) {
-                if (products.length >= 3) return;
-                var container = item.querySelector('[data-variants]');
-                if (!container) return;
-                try {
-                    var variants = JSON.parse(container.getAttribute('data-variants'));
-                    if (!variants || !variants.length) return;
-                    var v = variants[0];
-                    var imgRaw = v.image_url || '';
-                    var img = imgRaw ? 'https:' + imgRaw.replace(/\\/g, '').replace('-1024-1024.webp', '-480-0.webp') : '';
-                    var price = v.price_short || '';
-                    // Name from img alt (Nuvemshop sets it reliably)
-                    var imgEl = item.querySelector('img[alt]');
-                    var name = imgEl ? imgEl.getAttribute('alt').trim() : '';
-                    // Link from any anchor pointing to /produtos/
-                    var linkEl = item.querySelector('a[href*="/produtos/"]');
-                    var link = linkEl ? linkEl.getAttribute('href') : '';
-                    if (img && (name || price)) {
-                        products.push({ name: name, img: img, price: price, link: link });
-                    }
-                } catch(e) {}
-            });
-
-            if (!products.length) return;
-
-            while (grid.firstChild) grid.removeChild(grid.firstChild);
-            products.forEach(function(p) {
-                var a = document.createElement('a');
-                a.className = 'q-related-card';
-                a.href = p.link || '#';
-                a.target = '_blank';
-                var img = document.createElement('img');
-                img.src = p.img;
-                img.alt = p.name;
-                img.loading = 'lazy';
-                var nameEl = document.createElement('span');
-                nameEl.className = 'q-related-card-name';
-                nameEl.textContent = p.name;
-                a.appendChild(img);
-                a.appendChild(nameEl);
-                grid.appendChild(a);
-            });
-            section.style.display = 'block';
-        }
+        trigUpload.onclick = () => realInput.click();
 
         function showError() {
             var lb = document.getElementById('q-loading-box');
-            var su = photoStep;
+            var su = document.getElementById('q-step-upload');
             var se = document.getElementById('q-step-error');
             if (lb) lb.style.display = 'none';
             if (su) su.style.display = 'none';
@@ -994,154 +901,54 @@
         var _eb = document.getElementById('q-error-back'); if (_eb) _eb.onclick = function() { closeModal(); };
 
 
-
-        phoneInput.addEventListener('input', function (e) {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        phoneInput.addEventListener('input', function(e) {
+            var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
             e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
-            checkPhoneStep();
+            checkFields();
         });
 
-        function checkPhoneStep() {
-            const nums = phoneInput.value.replace(/\D/g, '');
-            const phoneOk = nums.length >= 10 && nums.length <= 11;
-            document.getElementById('q-phone-error').style.display = (phoneInput.value.length > 0 && !phoneOk) ? 'block' : 'none';
-            phoneInput.style.borderColor = (phoneInput.value.length > 0 && !phoneOk) ? '#ef4444' : 'var(--q-border)';
-            checkFields();
-        }
+        var userPhoto = null;
 
         function checkFields() {
-            const nums = phoneInput.value.replace(/\D/g, '');
-            const phoneOk = nums.length >= 10 && nums.length <= 11;
-            genBtn.disabled = !(userPhoto && phoneOk && document.getElementById('q-accept-terms').checked);
+            var nums = phoneInput.value.replace(/\D/g, '');
+            var phoneOk = nums.length >= 10 && nums.length <= 11;
+            phoneErr.style.display = (phoneInput.value.length > 0 && !phoneOk) ? 'block' : 'none';
+            phoneInput.style.borderColor = (phoneInput.value.length > 0 && !phoneOk) ? '#ef4444' : '';
+            genBtn.disabled = !(userPhoto && phoneOk && termsCheck.checked);
         }
 
-        document.getElementById('q-accept-terms').onchange = checkFields;
+        termsCheck.onchange = checkFields;
 
-        function handlePhotoSelected(file) {
-            if (!file) return;
-            userPhoto = file;
-            const rd = new FileReader();
-            rd.onload = ev => {
-                preImg.src = ev.target.result;
-                preImg.style.display = 'block';
-                if (facePlaceholder) facePlaceholder.style.display = 'none';
-                checkFields();
-            };
-            rd.readAsDataURL(file);
-        }
-
-        cameraInput.onchange  = (e) => handlePhotoSelected(e.target.files[0]);
-        galleryInput.onchange = (e) => handlePhotoSelected(e.target.files[0]);
-
-
-        function resizeImage(fileOrBlob, maxSize) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    let w = img.width, h = img.height;
-                    if (w <= maxSize && h <= maxSize) { resolve(fileOrBlob); return; }
-                    if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
-                    else { w = Math.round(w * maxSize / h); h = maxSize; }
-                    const c = document.createElement('canvas');
-                    c.width = w; c.height = h;
-                    c.getContext('2d').drawImage(img, 0, 0, w, h);
-                    c.toBlob(b => resolve(b), 'image/jpeg', 0.95);
+        realInput.onchange = function(e) {
+            userPhoto = e.target.files[0];
+            if (userPhoto) {
+                var rd = new FileReader();
+                rd.onload = function(ev) {
+                    preImg.src = ev.target.result;
+                    preView.style.display = 'block';
+                    checkFields();
                 };
-                const url = URL.createObjectURL(fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]));
-                img.src = url;
-            });
-        }
-
-        // ── PIX: polling e controle ──
-        let pixPollingTimer = null;
-
-        function stopPixPolling() {
-            if (pixPollingTimer) { clearInterval(pixPollingTimer); pixPollingTimer = null; }
-        }
-
-        function showPixScreen() {
-            uploadStep.style.display = 'none';
-            document.getElementById('q-step-pix').style.display = 'block';
-            document.getElementById('q-pix-status-msg').textContent = 'Aguardando pagamento...';
-            document.getElementById('q-pix-status-msg').className = 'q-pix-status q-pix-waiting';
-        }
-
-        function hidePixScreen() {
-            stopPixPolling();
-            document.getElementById('q-step-pix').style.display = 'none';
-        }
-
-        async function createPixAndPoll() {
-            showPixScreen();
-            try {
-                const resp = await fetch(WEBHOOK_PIX, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: 'cliente@provoulevou.com.br', phone: '55' + phoneInput.value.replace(/\D/g, '') })
-                });
-                const pix = await resp.json();
-                if (!pix.payment_id || !pix.qr_code) throw new Error('PIX inválido');
-
-                document.getElementById('q-pix-qr-img').src = 'data:image/png;base64,' + pix.qr_code_base64;
-                document.getElementById('q-pix-code').value = pix.qr_code;
-
-                // Polling a cada 3s por até 5min
-                let attempts = 0;
-                pixPollingTimer = setInterval(async () => {
-                    attempts++;
-                    if (attempts > 100) { stopPixPolling(); return; }
-                    try {
-                        const sr = await fetch(WEBHOOK_PIX_STATUS + '?payment_id=' + pix.payment_id);
-                        const st = await sr.json();
-                        if (st.status === 'approved') {
-                            stopPixPolling();
-                            document.getElementById('q-pix-status-msg').textContent = 'Pagamento confirmado!';
-                            document.getElementById('q-pix-status-msg').className = 'q-pix-status q-pix-approved';
-                            setTimeout(() => {
-                                hidePixScreen();
-                                runGeneration();
-                            }, 1200);
-                        }
-                    } catch (_) {}
-                }, 3000);
-            } catch (e) {
-                hidePixScreen();
-                uploadStep.style.display = 'block';
-                alert('Erro ao gerar PIX. Tente novamente.');
+                rd.readAsDataURL(userPhoto);
             }
-        }
-
-        // Botão copiar PIX
-        document.getElementById('q-pix-copy-btn').onclick = () => {
-            const code = document.getElementById('q-pix-code').value;
-            navigator.clipboard.writeText(code).then(() => {
-                document.getElementById('q-pix-copy-btn').textContent = 'Copiado!';
-                setTimeout(() => { document.getElementById('q-pix-copy-btn').textContent = 'Copiar'; }, 2000);
-            });
         };
 
-        // Botão cancelar PIX
-        document.getElementById('q-pix-cancel').onclick = () => {
-            hidePixScreen();
-            uploadStep.style.display = 'block';
-        };
+        genBtn.onclick = async function() {
+            if (!userPhoto) return;
+            var keyToUse = window.PROVOU_LEVOU_API_KEY;
+            if (!keyToUse) { alert('Erro: API Key não configurada.'); return; }
 
-        // ── GERAÇÃO PRINCIPAL ──
-        async function runGeneration() {
-            const keyToUse = window.PROVOU_LEVOU_API_KEY;
-            if (!keyToUse || keyToUse.includes("COLOQUE_A_CHAVE_AQUI")) {
-                alert("Erro: API Key não configurada neste script.");
-                return;
-            }
+            // Tray injeta window.dataLayer[0].urlImage com a imagem correta do produto
+            var prodImg =
+                (window.dataLayer && window.dataLayer[0] && window.dataLayer[0].urlImage) ||
+                document.querySelector('meta[property="og:image"]')?.content ||
+                '';
+            var prodName = document.querySelector('h1.product-name, h1.product__title, .product-single__title, h1')?.innerText || document.title;
 
-            const prodImg = selectedProductImgUrl || (document.querySelector('meta[property="og:image"]')?.content || '');
-            const prodName = document.querySelector('h1.product__title,.product-single__title,h1')?.innerText || document.title;
-
-            uploadStep.style.display = 'none';
-            document.getElementById('q-loading-box').style.display = 'flex';
+            stepUpload.style.display = 'none';
+            loadingBox.style.display = 'block';
 
             try {
-                const fd = new FormData();
+                var fd = new FormData();
                 fd.append('person_image', userPhoto, 'person.jpg');
                 fd.append('whatsapp', '55' + phoneInput.value.replace(/\D/g, ''));
                 fd.append('phone_raw', phoneInput.value);
@@ -1149,95 +956,86 @@
                 fd.append('product_type', currentProduct.category);
                 fd.append('product_fit', currentProduct.fit);
                 fd.append('api_key', keyToUse);
-
-                if (currentProduct.category === 'top') {
-                    fd.append('height', '');
-                    fd.append('weight', '');
-                } else {
-                    fd.append('height', '');
-                    fd.append('weight', '');
-                    fd.append('cintura', '');
-                    fd.append('quadril', '');
-                }
+                fd.append('height', '');
+                fd.append('weight', '');
 
                 if (prodImg) {
                     try {
-                        const b = await fetch(prodImg).then(r => r.blob());
+                        var b = await fetch(prodImg).then(function(r) { return r.blob(); });
                         fd.append('product_image', b, 'product.jpg');
-                    } catch (_) { }
+                    } catch (_) {}
                 }
 
-                calculateFinalSize();
+                var res = await fetch(WEBHOOK_PROVA, { method: 'POST', body: fd });
 
-                const res = await fetch(WEBHOOK_PROVA, { method: 'POST', body: fd });
-
-                const contentType = res.headers.get("content-type") || "";
-                if (contentType.includes("application/json")) {
-                    const data = await res.json();
+                var ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    var data = await res.json();
                     if (data.error) {
-                        document.getElementById('q-loading-box').style.display = 'none';
-                        photoStep.style.display = 'flex';
-                        if (data.error === "Chave invalida, vencida ou inativa." || data.error.includes("vencida ou inativa")) {
-                            alert("App desativado nesta loja");
-                        } else {
-                            alert(data.error);
-                        }
+                        loadingBox.style.display = 'none';
+                        stepUpload.style.display = 'flex';
+                        alert(data.error.includes('vencida ou inativa') ? 'App desativado nesta loja' : data.error);
                         return;
                     }
                 }
 
                 if (res.ok) {
-                    const blob = await res.blob();
-                    document.getElementById('q-loading-box').style.display = 'none';
-                    document.getElementById('q-final-view-img').src = URL.createObjectURL(blob);
-                    document.querySelector('.q-card-ia').classList.add('is-result');
-                    document.getElementById('q-step-result').style.display = 'flex';
-                    loadRelatedProducts();
+                    var blob = await res.blob();
+                    loadingBox.style.display = 'none';
+                    finalImg.src = URL.createObjectURL(blob);
+                    card.classList.add('is-result');
+                    stepResult.style.display = 'flex';
                 } else if (res.status === 401 || res.status === 403) {
-                    document.getElementById('q-loading-box').style.display = 'none';
-                    photoStep.style.display = 'flex';
-                    alert("App desativado nesta loja");
-                } else { throw new Error(); }
-            } catch (e) {
-                document.getElementById('q-loading-box').style.display = 'none';
-                photoStep.style.display = 'flex';
-                alert('Ocorreu um erro ao processar sua imagem (ou chave/servidor indisponíveis). Tente novamente.');
-            }
-        }
-
-        genBtn.onclick = async () => {
-            if (!userPhoto) return;
-
-            const phone = '55' + phoneInput.value.replace(/\D/g, '');
-            genBtn.disabled = true;
-
-            try {
-                const resp = await fetch(WEBHOOK_CHECK_LIMIT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone })
-                });
-                const data = await resp.json();
-                if (data.limited) {
-                    genBtn.disabled = false;
-                    createPixAndPoll();
-                    return;
+                    loadingBox.style.display = 'none';
+                    stepUpload.style.display = 'flex';
+                    alert('App desativado nesta loja');
+                } else {
+                    throw new Error('HTTP ' + res.status);
                 }
-            } catch (_) {
-                // se o check falhar, deixa gerar (evita bloquear por erro de rede)
+            } catch (e) {
+                loadingBox.style.display = 'none';
+                stepUpload.style.display = 'flex';
+                showError();
             }
-
-            genBtn.disabled = false;
-            runGeneration();
         };
     }
 
-    // ─── EXECUTA APENAS EM PÁGINAS DE PRODUTO ────────────────────────────────────
-    const isProductPage = window.location.pathname.includes('/products/') || window.location.pathname.includes('/product/') || window.location.pathname.includes('/produtos/') || window.location.pathname.includes('/produto/') || window.location.pathname.includes('/p/') || window.location.pathname.includes('preview.html') || document.querySelector('meta[property="og:type"][content="product"]');
+    // ─── 6. DETECÇÃO DE PÁGINA DE PRODUTO (Tray) ─────────────────────────────────
+    function runWhenReady() {
+        var path = window.location.pathname;
+        var isProduct =
+            window.__MC_FORCE_INIT__ === true ||
+            path.includes('/produto/') || path.includes('/p/') || path.includes('/products/') ||
+            document.getElementById('product-container') !== null ||
+            document.getElementById('form_comprar') !== null ||
+            document.querySelector('.botao-comprar') !== null ||
+            document.querySelector('.product-colum-right') !== null ||
+            document.querySelector('.page-product') !== null ||
+            document.querySelector('.frame_product_action_button') !== null ||
+            document.querySelector('h1.product-name') !== null;
 
-    if (isProductPage) {
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-        else init();
+        if (isProduct) {
+            init();
+        } else {
+            var tries = 0;
+            var iv = setInterval(function() {
+                tries++;
+                if (document.getElementById('form_comprar') !== null ||
+                    document.querySelector('.frame_product_action_button') !== null ||
+                    document.querySelector('h1.product-name') !== null) {
+                    clearInterval(iv);
+                    init();
+                } else if (tries >= 10) {
+                    clearInterval(iv);
+                }
+            }, 500);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runWhenReady);
+    } else {
+        runWhenReady();
     }
 
 })();
