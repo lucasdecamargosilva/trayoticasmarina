@@ -458,6 +458,7 @@
 
         /* ── Result ── */
         #q-step-result { display: none; flex-direction: column; gap: 0; align-items: stretch; }
+        .q-card-ia.is-result #q-header-provador { display: none !important; }
 
         .q-res-title {
             display: block;
