@@ -627,7 +627,7 @@
         var marinaImg = document.createElement('img');
         marinaImg.src = MARINA_LOGO;
         marinaImg.alt = 'Centro Optico Marina';
-        marinaImg.style.cssText = 'height:36px;width:auto;object-fit:contain;';
+        marinaImg.style.cssText = 'height:28px;width:auto;object-fit:contain;';
         marinaImg.onerror = function() { this.style.display = 'none'; };
         header.appendChild(marinaImg);
         scroll.appendChild(header);
