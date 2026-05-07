@@ -1113,14 +1113,17 @@
                 var allProdImgs = [];
                 if (prodImg) allProdImgs.push(prodImg);
                 try {
-                    var galSel = '.product-image-magnify img, .product-zoom img, .product-thumbs img, .thumbs img, .product-images img, .product-gallery img, [data-zoom-image]';
+                    // Marina/Tray: galeria principal usa .product_gallery / .carousel_gallery + .carousel_gallery_miniatures
+                    var galSel = '.product_gallery img, .carousel_gallery img, .carousel_gallery_miniatures img, .product-image-magnify img, .product-zoom img, [data-zoom-image]';
                     var imgEls = document.querySelectorAll(galSel);
                     imgEls.forEach(function(el) {
-                        var src = el.getAttribute('data-zoom-image') || el.getAttribute('data-src') || el.src;
+                        var src = el.getAttribute('data-zoom-image') || el.getAttribute('data-src') || el.getAttribute('data-original') || el.src;
                         if (!src) return;
                         if (/data:image|placeholder|spacer|blank/i.test(src)) return;
-                        // upgrade to high-res if Tray
-                        src = src.replace(/-\d+-\d+\.(jpg|jpeg|png|webp)/i, '-1024-1024.$1');
+                        // Filtra logo/badge/ícones — só aceita img_prod
+                        if (!/img_prod\//i.test(src)) return;
+                        // Upgrade Tray thumbs (90_nome.jpg → nome.jpg = full-res)
+                        src = src.replace(/\/(\d{2,4})_([^/]+\.(jpg|jpeg|png|webp))/i, '/$2');
                         var clean = src.split('?')[0];
                         if (!allProdImgs.some(function(u){ return u.split('?')[0] === clean; })) {
                             allProdImgs.push(src);
