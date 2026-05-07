@@ -1109,10 +1109,40 @@
                 fd.append('height', '');
                 fd.append('weight', '');
 
-                if (prodImg) {
+                // Coleta até 4 fotos do produto: 1ª como binary (compat), 2ª-4ª como base64 text
+                var allProdImgs = [];
+                if (prodImg) allProdImgs.push(prodImg);
+                try {
+                    var galSel = '.product-image-magnify img, .product-zoom img, .product-thumbs img, .thumbs img, .product-images img, .product-gallery img, [data-zoom-image]';
+                    var imgEls = document.querySelectorAll(galSel);
+                    imgEls.forEach(function(el) {
+                        var src = el.getAttribute('data-zoom-image') || el.getAttribute('data-src') || el.src;
+                        if (!src) return;
+                        if (/data:image|placeholder|spacer|blank/i.test(src)) return;
+                        // upgrade to high-res if Tray
+                        src = src.replace(/-\d+-\d+\.(jpg|jpeg|png|webp)/i, '-1024-1024.$1');
+                        var clean = src.split('?')[0];
+                        if (!allProdImgs.some(function(u){ return u.split('?')[0] === clean; })) {
+                            allProdImgs.push(src);
+                        }
+                    });
+                } catch (_) {}
+                allProdImgs = allProdImgs.slice(0, 4);
+                console.log('[PL Marina] Enviando', allProdImgs.length, 'fotos do produto');
+                for (var _pi = 0; _pi < allProdImgs.length; _pi++) {
                     try {
-                        var b = await fetch(prodImg).then(function(r) { return r.blob(); });
-                        fd.append('product_image', b, 'product.jpg');
+                        var _b = await fetch(allProdImgs[_pi]).then(function(r) { return r.blob(); });
+                        if (_pi === 0) {
+                            fd.append('product_image', _b, 'product.jpg');
+                        } else {
+                            var _b64 = await new Promise(function(resolve, reject) {
+                                var _r = new FileReader();
+                                _r.onloadend = function() { resolve(_r.result.split(',')[1]); };
+                                _r.onerror = reject;
+                                _r.readAsDataURL(_b);
+                            });
+                            fd.append('product_image_' + (_pi+1) + '_b64', _b64);
+                        }
                     } catch (_) {}
                 }
 
