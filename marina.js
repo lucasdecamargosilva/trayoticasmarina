@@ -8,6 +8,9 @@
     const STORE_ID = '1269258';
     const API_HOST = 'https://lojista.provoulevou.com.br';
     const WEBHOOK_PROVA = 'https://n8n.segredosdodrop.com/webhook/gerador-oculos';
+    const WEBHOOK_CHECK_LIMIT = 'https://n8n.segredosdodrop.com/webhook/marina-check-limit';
+    const WEBHOOK_PIX = 'https://n8n.segredosdodrop.com/webhook/marina-pix';
+    const WEBHOOK_PIX_STATUS = 'https://n8n.segredosdodrop.com/webhook/marina-pix-status';
     const MARINA_LOGO = 'https://images.tcdn.com.br/img/img_prod/1269258/1701713968_marina_centro_ptico.png';
     const PROVOU_LOGO = 'https://i.ibb.co/MD3B4FQf/Logo-provou-preto-1.png';
     const STAMP_SRC = 'https://cdn.shopify.com/s/files/1/0636/6334/1746/files/logo_provador.png?v=1772494793';
@@ -762,6 +765,53 @@
         stepUpload.appendChild(genBtn);
         scroll.appendChild(stepUpload);
 
+        // PIX (prova extra)
+        var stepPix = document.createElement('div');
+        stepPix.id = 'q-step-pix';
+        stepPix.style.cssText = 'display:none;text-align:center;padding:36px 28px;flex-direction:column;gap:16px;align-items:center;';
+        var pixH2 = document.createElement('h2');
+        pixH2.style.cssText = 'font-family:var(--font-display);font-size:24px;letter-spacing:3px;text-transform:uppercase;margin:0;font-weight:400;';
+        pixH2.textContent = 'Prova Extra';
+        stepPix.appendChild(pixH2);
+        var pixSub = document.createElement('p');
+        pixSub.className = 'q-pix-subtitle';
+        var pixSubLine1 = document.createTextNode('Limite de 3 provas atingido.');
+        pixSub.appendChild(pixSubLine1);
+        pixSub.appendChild(document.createElement('br'));
+        pixSub.appendChild(document.createTextNode('Pague R$1 via PIX para mais uma:'));
+        stepPix.appendChild(pixSub);
+        var pixQr = document.createElement('div');
+        pixQr.className = 'q-pix-qr';
+        var pixQrImg = document.createElement('img');
+        pixQrImg.id = 'q-pix-qr-img';
+        pixQrImg.alt = 'QR Code PIX';
+        pixQr.appendChild(pixQrImg);
+        stepPix.appendChild(pixQr);
+        var pixCopia = document.createElement('div');
+        pixCopia.className = 'q-pix-copiacola';
+        var pixCode = document.createElement('input');
+        pixCode.type = 'text';
+        pixCode.id = 'q-pix-code';
+        pixCode.readOnly = true;
+        pixCode.placeholder = 'Código PIX...';
+        var pixCopyBtn = document.createElement('button');
+        pixCopyBtn.id = 'q-pix-copy-btn';
+        pixCopyBtn.textContent = 'Copiar';
+        pixCopia.appendChild(pixCode);
+        pixCopia.appendChild(pixCopyBtn);
+        stepPix.appendChild(pixCopia);
+        var pixStatus = document.createElement('div');
+        pixStatus.id = 'q-pix-status-msg';
+        pixStatus.className = 'q-pix-status q-pix-waiting';
+        pixStatus.textContent = 'Aguardando pagamento...';
+        stepPix.appendChild(pixStatus);
+        var pixCancel = document.createElement('p');
+        pixCancel.id = 'q-pix-cancel';
+        pixCancel.className = 'q-pix-cancel';
+        pixCancel.textContent = 'Cancelar';
+        stepPix.appendChild(pixCancel);
+        scroll.appendChild(stepPix);
+
         // Loading
         var loadingBox = document.createElement('div');
         loadingBox.id = 'q-loading-box';
@@ -1055,6 +1105,69 @@
         });
 
         var userPhoto = null;
+        var pixPaymentId = null;
+        var pixPollingTimer = null;
+
+        function stopPixPolling() {
+            if (pixPollingTimer) { clearInterval(pixPollingTimer); pixPollingTimer = null; }
+        }
+        function showPixScreen() {
+            stepUpload.style.display = 'none';
+            stepPix.style.display = 'flex';
+            pixStatus.textContent = 'Aguardando pagamento...';
+            pixStatus.className = 'q-pix-status q-pix-waiting';
+        }
+        function hidePixScreen() {
+            stopPixPolling();
+            stepPix.style.display = 'none';
+        }
+        async function createPixAndPoll() {
+            showPixScreen();
+            try {
+                var resp = await fetch(WEBHOOK_PIX, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: '55' + phoneInput.value.replace(/\D/g, ''), email: 'cliente@provoulevou.com.br' })
+                });
+                var pix = await resp.json();
+                if (!pix.payment_id || !pix.qr_code) throw new Error('PIX inválido');
+                pixQrImg.src = 'data:image/png;base64,' + pix.qr_code_base64;
+                pixCode.value = pix.qr_code;
+                var attempts = 0;
+                pixPollingTimer = setInterval(async function() {
+                    attempts++;
+                    if (attempts > 100) { stopPixPolling(); return; }
+                    try {
+                        var sr = await fetch(WEBHOOK_PIX_STATUS + '?payment_id=' + pix.payment_id);
+                        var st = await sr.json();
+                        if (st.status === 'approved') {
+                            stopPixPolling();
+                            pixStatus.textContent = 'Pagamento confirmado!';
+                            pixStatus.className = 'q-pix-status q-pix-approved';
+                            setTimeout(function() {
+                                hidePixScreen();
+                                pixPaymentId = pix.payment_id;
+                                runGeneration();
+                            }, 1200);
+                        }
+                    } catch (_) {}
+                }, 3000);
+            } catch (e) {
+                hidePixScreen();
+                stepUpload.style.display = 'flex';
+                showError();
+            }
+        }
+        pixCopyBtn.onclick = function() {
+            navigator.clipboard.writeText(pixCode.value).then(function() {
+                pixCopyBtn.textContent = 'Copiado!';
+                setTimeout(function() { pixCopyBtn.textContent = 'Copiar'; }, 2000);
+            });
+        };
+        pixCancel.onclick = function() {
+            hidePixScreen();
+            stepUpload.style.display = 'flex';
+        };
 
         function checkFields() {
             var nums = phoneInput.value.replace(/\D/g, '');
@@ -1082,7 +1195,7 @@
         cameraInput.onchange = function(e) { handlePhotoSelected(e.target.files[0]); };
         galleryInput.onchange = function(e) { handlePhotoSelected(e.target.files[0]); };
 
-        genBtn.onclick = async function() {
+        async function runGeneration() {
             if (!userPhoto) return;
             var keyToUse = window.PROVOU_LEVOU_API_KEY;
             if (!keyToUse) { alert('Erro: API Key não configurada.'); return; }
@@ -1108,6 +1221,7 @@
                 fd.append('api_key', keyToUse);
                 fd.append('height', '');
                 fd.append('weight', '');
+                if (pixPaymentId) fd.append('pix_payment_id', pixPaymentId);
 
                 // Coleta até 4 fotos do produto: 1ª como binary (compat), 2ª-4ª como base64 text
                 var allProdImgs = [];
@@ -1181,6 +1295,32 @@
                 stepUpload.style.display = 'flex';
                 showError();
             }
+        }
+
+        genBtn.onclick = async function() {
+            if (!userPhoto) return;
+            var nums = phoneInput.value.replace(/\D/g, '');
+            var phoneOk = (nums.length === 10 || nums.length === 11) && /^[1-9][1-9]/.test(nums) && (nums.length === 10 || nums[2] === '9');
+            if (!phoneOk) { phoneInput.focus(); return; }
+            var phone = '55' + nums;
+            genBtn.disabled = true;
+            try {
+                var resp = await fetch(WEBHOOK_CHECK_LIMIT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone })
+                });
+                var data = await resp.json();
+                if (data.limited) {
+                    genBtn.disabled = false;
+                    createPixAndPoll();
+                    return;
+                }
+            } catch (_) {
+                // se o check falhar, deixa gerar (evita bloquear por erro de rede)
+            }
+            genBtn.disabled = false;
+            runGeneration();
         };
     }
 
