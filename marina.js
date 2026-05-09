@@ -1,5 +1,6 @@
 (function () {
-    // ─── SEO BACKLINK BADGE (static link to provoulevou.com.br for Google crawler) ───
+
+    // ─── SEO BACKLINK BADGE (mini logo discreto pro crawler do Google) ───
     (function() {
         function injectPLBadge() {
             try {
@@ -9,19 +10,20 @@
                 if (!isProduct) return;
                 var b = document.createElement('div');
                 b.className = 'pl-seo-badge';
-                b.style.cssText = 'font-size:10px;color:#aaa;text-align:center;padding:6px 0 10px;letter-spacing:0.3px;font-family:inherit;line-height:1.3;';
+                b.style.cssText = 'text-align:center;padding:4px 0;margin:0;opacity:0.35;line-height:1;';
                 var a = document.createElement('a');
                 a.href = 'https://provoulevou.com.br?utm_source=widget&utm_medium=lojista&utm_campaign=marina';
                 a.target = '_blank';
                 a.rel = 'noopener';
                 a.title = 'Provador Virtual de Óculos — Provou Levou';
-                a.style.cssText = 'color:#888;text-decoration:none;';
-                a.textContent = 'Provador Virtual de Óculos — Provou Levou';
+                a.style.cssText = 'display:inline-block;text-decoration:none;border:0;outline:0;';
+                var img = document.createElement('img');
+                img.src = 'https://i.ibb.co/MD3B4FQf/Logo-provou-preto-1.png';
+                img.alt = 'Provador Virtual de Óculos — Provou Levou';
+                img.style.cssText = 'height:12px;width:auto;border:0;display:block;';
+                a.appendChild(img);
                 b.appendChild(a);
-                var buy = document.querySelector('.js-addtocart, .btn-add-to-cart, [data-component="product.add-to-cart"], .addtocart, button[name="add"], .product-form__cart-submit, .frame_product_action_button button, #form_comprar button');
-                if (buy && buy.parentNode) {
-                    buy.parentNode.insertBefore(b, buy.nextSibling);
-                }
+                document.body.appendChild(b);
             } catch(e) {}
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectPLBadge);
