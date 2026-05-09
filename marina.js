@@ -10,7 +10,7 @@
                 if (!isProduct) return;
                 var b = document.createElement('div');
                 b.className = 'pl-seo-badge';
-                b.style.cssText = 'text-align:center;padding:4px 0;margin:0;opacity:0.35;line-height:1;';
+                b.style.cssText = 'text-align:center;padding:4px 0;margin:0;opacity:0.5;line-height:1;';
                 var a = document.createElement('a');
                 a.href = 'https://provoulevou.com.br?utm_source=widget&utm_medium=lojista&utm_campaign=marina';
                 a.target = '_blank';
