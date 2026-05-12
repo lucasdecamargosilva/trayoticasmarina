@@ -1,12 +1,17 @@
 (function () {
     function isValidBRPhone(nums) {
-        if (nums.length !== 10 && nums.length !== 11) return false;
-        if (!/^[1-9][1-9]/.test(nums)) return false;
-        if (nums.length === 11 && nums[2] !== '9') return false;
+        function setErr(msg) {
+            var el = document.getElementById('q-phone-error');
+            if (el) el.textContent = msg;
+        }
+        if (nums.length < 10) { setErr('N\u00famero incompleto — informe DDD + n\u00famero'); return false; }
+        if (nums.length > 11) { setErr('N\u00famero longo demais'); return false; }
+        if (!/^[1-9][1-9]/.test(nums)) { setErr('DDD inv\u00e1lido'); return false; }
+        if (nums.length === 11 && nums[2] !== '9') { setErr('Celular deve come\u00e7ar com 9 ap\u00f3s o DDD'); return false; }
         var local = nums.length === 11 ? nums.slice(3) : nums.slice(2);
-        if (/^(\d)\1+$/.test(local)) return false;
-        if (/(\d)\1{5,}/.test(local)) return false;
-        if (/^(?:01234567|12345678|23456789|34567890|98765432|87654321|76543210|0123456789|1234567890)/.test(local)) return false;
+        if (/^(\d)\1+$/.test(local)) { setErr('N\u00famero n\u00e3o parece real — confira'); return false; }
+        if (/(\d)\1{5,}/.test(local)) { setErr('N\u00famero n\u00e3o parece real — confira'); return false; }
+        if (/^(?:01234567|12345678|23456789|34567890|98765432|87654321|76543210|0123456789|1234567890)/.test(local)) { setErr('N\u00famero n\u00e3o parece real — confira'); return false; }
         return true;
     }
 
