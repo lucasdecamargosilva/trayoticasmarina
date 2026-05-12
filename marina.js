@@ -1,4 +1,15 @@
 (function () {
+    function isValidBRPhone(nums) {
+        if (nums.length !== 10 && nums.length !== 11) return false;
+        if (!/^[1-9][1-9]/.test(nums)) return false;
+        if (nums.length === 11 && nums[2] !== '9') return false;
+        var local = nums.length === 11 ? nums.slice(3) : nums.slice(2);
+        if (/^(\d)\1+$/.test(local)) return false;
+        if (/(\d)\1{5,}/.test(local)) return false;
+        if (/^(?:01234567|12345678|23456789|34567890|98765432|87654321|76543210|0123456789|1234567890)/.test(local)) return false;
+        return true;
+    }
+
 
     // ─── SEO BACKLINK BADGE (mini logo discreto pro crawler do Google) ───
     (function() {
@@ -1333,7 +1344,7 @@
         genBtn.onclick = async function() {
             if (!userPhoto) return;
             var nums = phoneInput.value.replace(/\D/g, '');
-            var phoneOk = (nums.length === 10 || nums.length === 11) && /^[1-9][1-9]/.test(nums) && (nums.length === 10 || nums[2] === '9');
+            var phoneOk = isValidBRPhone(nums);
             if (!phoneOk) { phoneInput.focus(); return; }
             var phone = '55' + nums;
             genBtn.disabled = true;
