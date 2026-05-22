@@ -22,6 +22,7 @@
             try {
                 if (document.querySelector('.pl-seo-badge')) return;
                 var path = window.location.pathname;
+                if (path.toLowerCase().includes('/lentes')) return;
                 var isProduct = path.includes('/produto/') || path.includes('/produtos/') || path.includes('/products/') || path.includes('/p/') || document.querySelector('meta[property="og:type"][content="product"]');
                 if (!isProduct) return;
                 var b = document.createElement('div');
@@ -1376,6 +1377,8 @@
     // ─── 6. DETECÇÃO DE PÁGINA DE PRODUTO (Tray) ─────────────────────────────────
     function runWhenReady() {
         var path = window.location.pathname;
+        // Não exibe o provador em páginas de lentes
+        if (path.toLowerCase().includes('/lentes')) return;
         var isProduct =
             window.__MC_FORCE_INIT__ === true ||
             path.includes('/produto/') || path.includes('/p/') || path.includes('/products/') ||
