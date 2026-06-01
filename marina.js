@@ -230,7 +230,7 @@
         /* ── Trigger (selo sobre foto) ── */
         @keyframes q-shake { 0%,50%,100%{transform:rotate(0deg)} 10%,30%{transform:rotate(-10deg)} 20%,40%{transform:rotate(10deg)} }
         .q-btn-trigger-ia {
-            position: absolute; top: 14px; right: 70px; z-index: 100;
+            position: absolute; top: 14px; right: 70px; z-index: 10;
             background: none; border: none; padding: 0; cursor: pointer;
             width: 70px; height: 70px;
             display: flex; align-items: center; justify-content: center;
@@ -1007,9 +1007,31 @@
                 }
             }
             if (!placed) {
-                openBtn.style.cssText = 'position:fixed;bottom:100px;right:20px;z-index:100;width:72px;height:72px;background:none;border:none;padding:0;cursor:pointer;';
+                openBtn.style.cssText = 'position:fixed;bottom:100px;right:20px;z-index:10;width:72px;height:72px;background:none;border:none;padding:0;cursor:pointer;';
                 document.body.appendChild(openBtn);
             }
+
+            // Esconde trigger quando algum modal/popup estiver visível
+            (function _hideTriggerOnModal() {
+                function anyOverlayOpen() {
+                    var sels = ['.modal.show', '.modal.in', '.modal[style*="display: block"]',
+                                '.popup-active', '.fancybox-container', '.swal2-container',
+                                '[role="dialog"][aria-hidden="false"]', '.tray-modal-open',
+                                'body.modal-open', 'body.no-scroll', 'body.popup-open'];
+                    for (var i = 0; i < sels.length; i++) {
+                        try { if (document.querySelector(sels[i])) return true; } catch(e) {}
+                    }
+                    return false;
+                }
+                function apply() { openBtn.style.visibility = anyOverlayOpen() ? 'hidden' : ''; }
+                apply();
+                try {
+                    new MutationObserver(apply).observe(document.body, {
+                        attributes: true, childList: true, subtree: true,
+                        attributeFilter: ['class', 'style', 'aria-hidden']
+                    });
+                } catch(e) {}
+            })();
         }
 
         // ── Inline button (acima do comprar) ──────────────────────────────────────
