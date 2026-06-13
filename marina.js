@@ -898,7 +898,7 @@
         stepResult.id = 'q-step-result';
         var resTitle = document.createElement('span');
         resTitle.className = 'q-res-title';
-        resTitle.textContent = 'Veja como ficou em você ✨';
+        resTitle.textContent = 'Veja como ficou em você';
         stepResult.appendChild(resTitle);
         var resultImgCol = document.createElement('div');
         resultImgCol.id = 'q-result-img-col';
