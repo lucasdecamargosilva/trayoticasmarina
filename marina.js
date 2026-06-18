@@ -341,8 +341,8 @@
         .q-input {
             display: block; width: 100%; height: 52px;
             padding: 0 16px; margin: 0;
-            background: var(--c-surface); border: 1.5px solid transparent;
-            border-bottom: 1.5px solid var(--c-line); border-radius: 0;
+            background: var(--c-surface); border: 1.5px solid var(--c-line);
+            border-radius: 14px;
             font-size: 16px; font-family: var(--font-body); font-weight: 400;
             color: var(--c-ink); outline: none;
             -webkit-appearance: none; appearance: none; transition: border-color 0.2s;
@@ -427,7 +427,7 @@
         .q-btn-black {
             width: 100%; height: 52px;
             background: var(--c-ink); color: #fff;
-            border: none; border-radius: 0;
+            border: none; border-radius: 14px;
             font-family: var(--font-display); font-size: 17px;
             letter-spacing: 3px; text-transform: uppercase;
             cursor: pointer; transition: opacity 0.2s; box-sizing: border-box;
