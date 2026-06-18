@@ -1379,6 +1379,11 @@
             if (!phoneOk) { phoneInput.focus(); return; }
             var phone = '55' + nums;
             genBtn.disabled = true;
+
+            // Feedback imediato: mostra a animacao na hora; o check de limite roda enquanto ela ja aparece.
+            try { stepUpload.style.display = 'none'; } catch (_) {}
+            try { loadingBox.style.display = 'flex'; } catch (_) {}
+
             try {
                 var resp = await fetch(WEBHOOK_CHECK_LIMIT, {
                     method: 'POST',
@@ -1387,6 +1392,7 @@
                 });
                 var data = await resp.json();
                 if (data.limited) {
+                    try { loadingBox.style.display = 'none'; } catch (_) {}
                     genBtn.disabled = false;
                     createPixAndPoll();
                     return;
