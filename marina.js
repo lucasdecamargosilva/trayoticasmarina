@@ -1196,6 +1196,14 @@
             stepPix.style.display = 'none';
         }
         async function createPixAndPoll() {
+            /* PIX_DESATIVADO: prova extra via PIX removida - mostra so mensagem de volte amanha. */
+            try {
+                var _ph = document.getElementById('q-step-photo'); if (_ph) _ph.style.display = 'none';
+                var _lb = document.getElementById('q-loading-box'); if (_lb) _lb.style.display = 'none';
+                var _pix = document.getElementById('q-step-pix');
+                if (_pix) { _pix.style.display = 'block'; _pix.innerHTML = '<h2>Limite de hoje atingido</h2><p class="q-pix-subtitle" style="text-align:center;">Voc&ecirc; j&aacute; usou suas provas de hoje.<br>Volte amanh&atilde; para experimentar mais &oacute;culos! &#128522;</p>'; }
+            } catch (e) {}
+            return;
             showPixScreen();
             try {
                 var resp = await fetch(WEBHOOK_PIX, {
