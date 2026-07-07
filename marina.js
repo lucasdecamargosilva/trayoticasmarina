@@ -61,6 +61,7 @@
     const API_HOST = 'https://lojista.provoulevou.com.br';
     const WEBHOOK_PROVA = 'https://n8n.segredosdodrop.com/webhook/gerador-oculos';
     const WEBHOOK_CHECK_LIMIT = 'https://n8n.segredosdodrop.com/webhook/marina-check-limit';
+    const WEBHOOK_BUY_CLICK = 'https://n8n.segredosdodrop.com/webhook/pl-provador-buy-click';
     const WEBHOOK_PIX = 'https://n8n.segredosdodrop.com/webhook/marina-pix';
     const WEBHOOK_PIX_STATUS = 'https://n8n.segredosdodrop.com/webhook/marina-pix-status';
     const MARINA_LOGO = 'https://images.tcdn.com.br/img/img_prod/1269258/1701713968_marina_centro_ptico.png';
@@ -514,6 +515,23 @@
         }
 
         /* ── Result ── */
+        .q-result-prodinfo { text-align: left; margin-bottom: 10px; }
+        .q-result-prodname { font-family: var(--font-body); font-size: 20px; font-weight: 700; color: var(--c-ink); line-height: 1.25; margin-bottom: 6px; }
+        .q-result-prodprice { font-family: var(--font-display); font-size: 28px; letter-spacing: .5px; font-weight: 700; color: var(--c-ink); line-height: 1; }
+        .q-result-installment { font-family: var(--font-body); font-size: 12px; color: var(--c-muted); margin-top: 4px; letter-spacing: .2px; }
+        .q-seals { display: flex; justify-content: flex-start; gap: 30px; margin: 8px 0; padding: 12px 0; border-top: 1px solid var(--c-line); border-bottom: 1px solid var(--c-line); }
+        .q-seal { display: flex; align-items: center; gap: 9px; }
+        .q-seal > i { font-size: 24px; color: var(--c-primary, #6dadbc); flex-shrink: 0; }
+        .q-seal span { font-family: var(--font-body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; line-height: 1.25; color: var(--c-ink); text-align: left; }
+        .q-btn-buy-now {
+            width: 100%; padding: 16px 18px; margin-bottom: 10px;
+            background: var(--c-primary, #6dadbc); color: #fff; border: 1px solid var(--c-primary, #6dadbc);
+            border-radius: 14px; font-family: var(--font-body);
+            font-weight: 700; font-size: 15px; letter-spacing: .3px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: opacity .2s; box-sizing: border-box; line-height: 1.2; text-decoration: none;
+        }
+        .q-btn-buy-now:hover { opacity: .85; }
         #q-step-result { display: none; flex-direction: column; gap: 0; align-items: stretch; }
 
         .q-res-title {
@@ -933,6 +951,43 @@
         resultImgCol.appendChild(finalImg);
         var resultActCol = document.createElement('div');
         resultActCol.id = 'q-result-actions-col';
+
+        // Info do produto (nome + preço + parcelamento) — igual à Univisão
+        var prodInfo = document.createElement('div');
+        prodInfo.className = 'q-result-prodinfo';
+        prodInfo.id = 'q-result-prodinfo';
+        prodInfo.style.display = 'none';
+        var prodNameEl = document.createElement('div');
+        prodNameEl.className = 'q-result-prodname';
+        prodNameEl.id = 'q-result-prodname';
+        var prodPriceEl = document.createElement('div');
+        prodPriceEl.className = 'q-result-prodprice';
+        prodPriceEl.id = 'q-result-prodprice';
+        var prodInstEl = document.createElement('div');
+        prodInstEl.className = 'q-result-installment';
+        prodInstEl.id = 'q-result-installment';
+        prodInfo.appendChild(prodNameEl);
+        prodInfo.appendChild(prodPriceEl);
+        prodInfo.appendChild(prodInstEl);
+        resultActCol.appendChild(prodInfo);
+
+        // Selos de confiança
+        var sealsEl = document.createElement('div');
+        sealsEl.className = 'q-seals';
+        sealsEl.id = 'q-seals';
+        sealsEl.style.display = 'none';
+        sealsEl.innerHTML = '<div class="q-seal"><i class="ph-fill ph-shield-check"></i><span>Compra<br>Segura</span></div>' +
+            '<div class="q-seal"><i class="ph-fill ph-lock-key"></i><span>Pagamento<br>Seguro</span></div>';
+        resultActCol.appendChild(sealsEl);
+
+        // Botão comprar agora + sucesso
+        var buyNowBtn = document.createElement('button');
+        buyNowBtn.className = 'q-btn-buy-now';
+        buyNowBtn.id = 'q-btn-buy-now';
+        buyNowBtn.style.display = 'none';
+        buyNowBtn.textContent = 'Comprar Agora';
+        resultActCol.appendChild(buyNowBtn);
+
         var backBtn = document.createElement('button');
         backBtn.className = 'q-btn-outline';
         backBtn.id = 'q-btn-back';
@@ -1118,7 +1173,105 @@
         applyDesignToButtons();
 
         // ── Eventos ───────────────────────────────────────────────────────────────
-        function openModal()  { modal.style.display = 'flex'; lockBodyScroll(); }
+
+        // fallback JSON-LD offers.price e por fim .product-price.
+        // Converte texto de preço BR ("R$ 1.234,56") para número.
+        function _priceToNum(t) {
+            var m = String(t || '').replace(/[^\d.,]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
+            var n = parseFloat(m);
+            return isNaN(n) ? 0 : n;
+        }
+        // Preço canônico via JSON-LD (offers.price) — fonte da verdade do produto principal.
+        // Em kits "2 em 1" a página tem VÁRIOS .current-price (um por combinação); o querySelector
+        // pegaria o primeiro (errado). O JSON-LD sempre reflete o produto/variação principal.
+        function _getLdPrice() {
+            try {
+                var s = document.querySelectorAll('script[type="application/ld+json"]');
+                for (var i = 0; i < s.length; i++) {
+                    var j = JSON.parse(s[i].textContent);
+                    var arr = Array.isArray(j) ? j : [j];
+                    for (var k = 0; k < arr.length; k++) {
+                        var o = arr[k] && arr[k].offers;
+                        if (o) { var p = Array.isArray(o) ? o[0].price : o.price; if (p) return Number(p); }
+                    }
+                }
+            } catch (e) {}
+            return 0;
+        }
+        function getMainPrice() {
+            var ld = _getLdPrice();
+            if (ld > 0) return 'R$ ' + ld.toFixed(2).replace('.', ',');
+            var el = document.querySelector('.product-price .current-price, .price.display-cash .current-price, .current-price');
+            var t = el ? (el.textContent || '').trim() : '';
+            if (t && /\d/.test(t)) return t.replace(/\s+/g, ' ');
+            var pe = document.querySelector('.product-price');
+            var pt = pe ? (pe.textContent || '').trim() : '';
+            return /\d/.test(pt) ? pt.replace(/\s+/g, ' ') : '';
+        }
+        // Parcelamento amarrado ao PREÇO canônico: no kit clip-on "2 em 1" a página tem
+        // vários parcelamentos (combinações diferentes) no DOM. Escolhe a parcela cujo
+        // total (Nx × valor) casa com o preço do produto — assim nunca mostra a parcela de
+        // outra combinação (ex.: 2x 94,95 = 189,90 quando o produto é 219,90 = 3x 73,30).
+        function getInstallment() {
+            var priceNum = _getLdPrice() || _priceToNum(getMainPrice());
+            if (!priceNum || priceNum <= 0) return '';
+            var els = document.querySelectorAll('.product-installments, .txt-corparcelas, [class*="parcela"]');
+            var tol = Math.max(0.5, priceNum * 0.02); // tolerância p/ arredondamento das parcelas
+            var fallback = '';
+            for (var i = 0; i < els.length; i++) {
+                var t = (els[i].textContent || '').replace(/\s+/g, ' ').trim();
+                var m = t.match(/(\d+)\s*x\s*(?:de\s*)?R?\$?\s*([\d.,]+)/i);
+                if (!m) continue;
+                var n = parseInt(m[1], 10), v = _priceToNum(m[2]);
+                if (!n || !v) continue;
+                var clean = t.replace(/^(ou|em at[ée])\s*/i, '').replace(/(sem juros|com juros).*/i, '$1').trim();
+                if (!fallback) fallback = clean;
+                if (Math.abs(n * v - priceNum) <= tol) return clean; // total casa com o preço -> essa é a certa
+            }
+            // nenhuma parcela bate com o preço: melhor não mostrar do que mostrar errada
+            return '';
+        }
+        // Botão nativo de compra da loja (Tray) — submit do form_comprar.
+        function findStoreBuyBtn() {
+            return document.querySelector('#button-buy, .buy-button, .botao-comprar, .product-buy-button, [name="comprar"]');
+        }
+        // "Comprar Agora": marca carrinho_adicionado na prova (tracking por telefone, pro
+        // funil "Clicou em comprar" do dashboard) e aciona o botão nativo da loja. Na Tray, o
+        // #button-buy é um submit que trata a seleção de variação (kit) e redireciona pro
+        // carrinho nativamente — por isso NÃO simulamos "adicionado" nem link /carrinho fixo.
+        function buyNow() {
+            try {
+                var _pe = document.getElementById('q-phone') || document.getElementById('mc-phone') || document.querySelector('#q-modal-ia input[type=tel], input[type=tel]');
+                var _tp = (_pe && _pe.value) || '';
+                var _td = (document.querySelector('h1.product-name, h1.product__title, h1') || {}).innerText || document.title || '';
+                fetch(WEBHOOK_BUY_CLICK, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: _tp, origin: location.origin, produto: _td }) }).catch(function () {});
+            } catch (e) {}
+            var sb = findStoreBuyBtn();
+            try { closeModal(); } catch (e) {}
+            if (sb) { try { sb.click(); } catch (e) {} }
+        }
+        // Nome + preço + parcelamento + selos + botão (layout igual à Univisão).
+        function populateBuyCta() {
+            var btn = document.getElementById('q-btn-buy-now');
+            if (!btn) return;
+            var succ = document.getElementById('q-buy-success'); if (succ) succ.style.display = 'none';
+            var price = getMainPrice();
+            var prodName = (document.querySelector('h1.product-name, h1.product__title, h1')?.innerText || document.title || '').trim();
+            var nameEl = document.getElementById('q-result-prodname'); if (nameEl) nameEl.textContent = prodName;
+            var priceEl = document.getElementById('q-result-prodprice'); if (priceEl) priceEl.textContent = price || '';
+            var instEl = document.getElementById('q-result-installment'); if (instEl) { var _i = getInstallment(); instEl.textContent = _i; instEl.style.display = _i ? 'block' : 'none'; }
+            var info = document.getElementById('q-result-prodinfo'); if (info && (prodName || price)) info.style.display = 'block';
+            var seals = document.getElementById('q-seals'); if (seals) seals.style.display = 'flex';
+            btn.style.display = findStoreBuyBtn() ? 'flex' : 'none';
+            btn.onclick = buyNow;
+        }
+
+        var WEBHOOK_OPEN_PL = 'https://n8n.segredosdodrop.com/webhook/pl-provador-open';
+        function plSid() { try { var s = localStorage.getItem('pl_sid'); if (!s) { s = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem('pl_sid', s); } return s; } catch (e) { return 'nostore'; } }
+        function plTrackOpen() { try { fetch(WEBHOOK_OPEN_PL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: plSid(), origin: location.origin, produto: (document.querySelector('h1.product-name, h1.product__title, .product-single__title, h1') || {}).innerText || document.title || '' }) }).catch(function () {}); } catch (e) {} }
+        function plTrackProved(rawPhone) { try { var d = (rawPhone || '').replace(/\D/g, ''); if (d.length > 11 && d.slice(0, 2) === '55') d = d.slice(2); fetch(WEBHOOK_OPEN_PL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: plSid(), proved: true, telefone_cliente: d || null }) }).catch(function () {}); } catch (e) {} }
+
+        function openModal()  { try { plTrackOpen(); } catch (e) {} modal.style.display = 'flex'; lockBodyScroll(); }
         function closeModal() { modal.style.display = 'none'; unlockBodyScroll(); 
             // --- volta pra tela inicial ao fechar (pos-prova) + limpa input p/ 2a foto enviar ---
             try {
@@ -1415,6 +1568,8 @@
                     finalImg.src = URL.createObjectURL(blob);
                     card.classList.add('is-result');
                     stepResult.style.display = 'flex';
+                    try { populateBuyCta(); } catch (e) {}
+                    try { plTrackProved((document.getElementById('q-phone') || document.getElementById('mc-phone') || document.querySelector('#q-modal-ia input[type=tel], input[type=tel]') || {}).value); } catch (e) {}
                     loadRelatedProducts();
                 } else if (res.status === 401 || res.status === 403) {
                     loadingBox.style.display = 'none';
