@@ -505,10 +505,12 @@
             color: var(--c-muted); font-family: var(--font-body);
         }
         .q-loading-t2 img { height: 26px; width: auto; opacity: 0.7; }
-        .q-loading-bar { height: 1px; background: var(--c-line); width: 100%; position: relative; overflow: hidden; }
+        .q-loading-bar { height: 3px; background: var(--c-line); width: 100%; position: relative; overflow: hidden; border-radius: 2px; }
         .q-loading-bar > div {
-            position: absolute; top: 0; left: 0; height: 100%; width: 35%;
-            background: var(--c-ink); animation: q-slide 1.4s infinite linear;
+            position: absolute; top: 0; left: 0; height: 100%; width: 100%;
+            background: var(--c-ink); border-radius: 2px;
+            transform: scaleX(0); transform-origin: left;
+            transition: transform 0.3s ease-out;
         }
 
         /* ── Result ── */
@@ -893,6 +895,28 @@
         var loadingFill = document.createElement('div');
         loadingBar.appendChild(loadingFill);
         loadingBox.appendChild(loadingBar);
+
+        // ── Barra de progresso simulada (nao ha evento real de progresso do backend).
+        // Desacelera perto de 92% e se auto-encerra sozinha quando a tela de loading
+        // for escondida (sucesso, erro ou limite) - nao precisa de hook em cada saida. ──
+        var _qProgressTimer = null;
+        function startLoadingProgress() {
+            if (_qProgressTimer) { clearInterval(_qProgressTimer); _qProgressTimer = null; }
+            if (!loadingBox || !loadingFill) return;
+            loadingFill.style.transition = 'none';
+            loadingFill.style.transform = 'scaleX(0)';
+            void loadingFill.offsetWidth;
+            loadingFill.style.transition = 'transform 0.3s ease-out';
+            var progress = 0;
+            _qProgressTimer = setInterval(function () {
+                if (loadingBox.style.display !== 'flex') { clearInterval(_qProgressTimer); _qProgressTimer = null; return; }
+                var remaining = 92 - progress;
+                progress += Math.max(remaining * 0.06, 0.15);
+                if (progress > 92) progress = 92;
+                loadingFill.style.transform = 'scaleX(' + (progress / 100) + ')';
+            }, 200);
+        }
+
         scroll.appendChild(loadingBox);
 
         // Result
@@ -1301,6 +1325,7 @@
 
             stepUpload.style.display = 'none';
             loadingBox.style.display = 'flex';
+            startLoadingProgress();
 
             try {
                 var fd = new FormData();
@@ -1400,7 +1425,8 @@
 
             // Feedback imediato: mostra a animacao na hora; o check de limite roda enquanto ela ja aparece.
             try { stepUpload.style.display = 'none'; } catch (_) {}
-            try { loadingBox.style.display = 'flex'; } catch (_) {}
+            try { loadingBox.style.display = 'flex';
+ startLoadingProgress(); } catch (_) {}
 
             try {
                 var resp = await fetch(WEBHOOK_CHECK_LIMIT, {
