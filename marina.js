@@ -1039,7 +1039,7 @@
         errHelp.style.cssText = 'font-size:12px;color:var(--c-muted);margin:14px 0 8px;';
         errHelp.textContent = 'Continua com problema? Fale direto com a Provou Levou:';
         var errWa = document.createElement('a');
-        errWa.href = 'https://wa.me/5511965749173?text=' + encodeURIComponent('Olá! Tive um problema ao usar o provador.');
+        errWa.href = 'https://wa.me/5511938034714?text=' + encodeURIComponent('Olá! Tive um problema ao usar o provador.');
         errWa.target = '_blank'; errWa.rel = 'noopener noreferrer';
         errWa.style.cssText = 'display:inline-flex;align-items:center;gap:7px;background:#25D366;color:#fff;border-radius:10px;padding:10px 18px;font-family:inherit;font-weight:700;font-size:13px;text-decoration:none;';
         errWa.textContent = '💬 Falar com a Provou Levou';
