@@ -836,6 +836,41 @@
         genBtn.textContent = 'Provar óculos';
         stepUpload.appendChild(genBtn);
         scroll.appendChild(stepUpload);
+        // Confirmação explícita antes de qualquer consulta de limite ou geração.
+        var confirmedPhone = '';
+        var phoneConfirmation = document.createElement('section');
+        phoneConfirmation.id = 'q-phone-confirmation';
+        phoneConfirmation.style.cssText = 'display:none;padding:24px 0;text-align:center;';
+        var confirmTitle = document.createElement('h2');
+        confirmTitle.textContent = 'Seu WhatsApp está correto?';
+        confirmTitle.style.cssText = 'font-size:20px;line-height:1.4;margin:0 0 16px;';
+        var confirmNumber = document.createElement('p');
+        confirmNumber.style.cssText = 'font-size:24px;font-weight:600;line-height:1.5;margin:0 0 16px;';
+        var confirmHint = document.createElement('p');
+        confirmHint.textContent = 'Confira o DDD e todos os números antes de continuar.';
+        confirmHint.style.cssText = 'font-size:14px;line-height:1.6;margin:0 0 24px;';
+        var confirmPhoneBtn = document.createElement('button');
+        confirmPhoneBtn.type = 'button';
+        confirmPhoneBtn.className = 'q-btn-black';
+        confirmPhoneBtn.textContent = 'Sim, este é meu WhatsApp';
+        var editPhoneBtn = document.createElement('button');
+        editPhoneBtn.type = 'button';
+        editPhoneBtn.className = 'q-btn-outline';
+        editPhoneBtn.textContent = 'Corrigir número';
+        editPhoneBtn.style.marginTop = '12px';
+        [confirmTitle, confirmNumber, confirmHint, confirmPhoneBtn, editPhoneBtn].forEach(function(el) { phoneConfirmation.appendChild(el); });
+        scroll.appendChild(phoneConfirmation);
+        editPhoneBtn.onclick = function() {
+            confirmedPhone = '';
+            phoneConfirmation.style.display = 'none';
+            stepUpload.style.display = 'flex';
+            phoneInput.focus();
+        };
+        confirmPhoneBtn.onclick = function() {
+            confirmedPhone = phoneInput.value.replace(/\D/g, '');
+            phoneConfirmation.style.display = 'none';
+            genBtn.onclick();
+        };
 
         // PIX (prova extra)
         var stepPix = document.createElement('div');
@@ -1273,6 +1308,8 @@
 
         function openModal()  { try { plTrackOpen(); } catch (e) {} modal.style.display = 'flex'; lockBodyScroll(); }
         function closeModal() { modal.style.display = 'none'; unlockBodyScroll(); 
+            confirmedPhone = '';
+            phoneConfirmation.style.display = 'none';
             // --- volta pra tela inicial ao fechar (pos-prova) + limpa input p/ 2a foto enviar ---
             try {
                 var _qsr = document.getElementById('q-step-result'); if (_qsr) _qsr.style.display = 'none';
@@ -1375,6 +1412,7 @@
 
 
         phoneInput.addEventListener('input', function(e) {
+            confirmedPhone = '';
             var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
             e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
             checkFields();
@@ -1589,7 +1627,15 @@
             if (!userPhoto) return;
             var nums = phoneInput.value.replace(/\D/g, '');
             var phoneOk = isValidBRPhone(nums);
-            if (!phoneOk) { phoneInput.focus(); return; }
+            if (!phoneOk) { phoneErr.style.display = 'block'; phoneInput.focus(); return; }
+            if (!termsCheck.checked) return;
+            if (confirmedPhone !== nums) {
+                confirmNumber.textContent = '+55 ' + phoneInput.value;
+                stepUpload.style.display = 'none';
+                phoneConfirmation.style.display = 'block';
+                confirmPhoneBtn.focus();
+                return;
+            }
             var phone = '55' + nums;
             genBtn.disabled = true;
 
