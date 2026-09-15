@@ -215,6 +215,9 @@
 
     // ─── 4. ESTILOS (design Califa) ───────────────────────────────────────────────
     const styles = `
+        #q-phone-confirmation:not([open]) { display:none !important; }
+        #q-phone-confirmation[open] { display:block !important; }
+        #q-phone-confirmation::backdrop { background:rgba(0,0,0,.38); }
         /* ── Fontes ── */
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 
@@ -838,10 +841,12 @@
         scroll.appendChild(stepUpload);
         // Confirmação explícita antes de qualquer consulta de limite ou geração.
         var confirmedPhone = '';
-        var phoneConfirmation = document.createElement('section');
+        var phoneConfirmation = document.createElement('dialog');
         phoneConfirmation.id = 'q-phone-confirmation';
-        phoneConfirmation.style.cssText = 'display:none;padding:12px;margin-top:12px;border:1px solid var(--c-border,#ddd);border-radius:8px;text-align:left;background:var(--c-surface,#fafafa);';
+        phoneConfirmation.style.cssText = 'position:fixed;inset:0;box-sizing:border-box;width:calc(100% - 32px);max-width:340px;max-height:80vh;overflow:auto;padding:20px;margin:auto;border:1px solid var(--c-border,#ddd);border-radius:12px;text-align:left;background:var(--c-bg,#fff);color:var(--c-ink,#111);';
+        phoneConfirmation.setAttribute('aria-labelledby', 'q-phone-confirm-title');
         var confirmTitle = document.createElement('h2');
+        confirmTitle.id = 'q-phone-confirm-title';
         confirmTitle.textContent = 'Seu WhatsApp está correto?';
         confirmTitle.style.cssText = 'font:600 14px/1.4 var(--font-body,sans-serif);letter-spacing:0;text-transform:none;margin:0 0 4px;';
         var confirmNumber = document.createElement('p');
@@ -864,18 +869,26 @@
             confirmActions.appendChild(button);
         });
         [confirmTitle, confirmNumber, confirmHint, confirmActions].forEach(function(el) { phoneConfirmation.appendChild(el); });
-        phoneWrap.appendChild(phoneConfirmation);
+        document.body.appendChild(phoneConfirmation);
         editPhoneBtn.onclick = function() {
             confirmedPhone = '';
-            phoneConfirmation.style.display = 'none';
+            phoneConfirmation.close();
             stepUpload.style.display = 'flex';
             phoneInput.focus();
         };
         confirmPhoneBtn.onclick = function() {
             confirmedPhone = phoneInput.value.replace(/\D/g, '');
-            phoneConfirmation.style.display = 'none';
+            phoneConfirmation.close();
             genBtn.onclick();
         };
+        phoneConfirmation.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            editPhoneBtn.onclick();
+        });
+        phoneConfirmation.addEventListener('click', function(e) {
+            var rect = phoneConfirmation.getBoundingClientRect();
+            if (e.target === phoneConfirmation && (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom)) editPhoneBtn.onclick();
+        });
 
         // PIX (prova extra)
         var stepPix = document.createElement('div');
@@ -1314,7 +1327,7 @@
         function openModal()  { try { plTrackOpen(); } catch (e) {} modal.style.display = 'flex'; lockBodyScroll(); }
         function closeModal() { modal.style.display = 'none'; unlockBodyScroll(); 
             confirmedPhone = '';
-            phoneConfirmation.style.display = 'none';
+            phoneConfirmation.close();
             // --- volta pra tela inicial ao fechar (pos-prova) + limpa input p/ 2a foto enviar ---
             try {
                 var _qsr = document.getElementById('q-step-result'); if (_qsr) _qsr.style.display = 'none';
@@ -1418,7 +1431,7 @@
 
         phoneInput.addEventListener('input', function(e) {
             confirmedPhone = '';
-            phoneConfirmation.style.display = 'none';
+            phoneConfirmation.close();
             var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
             e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
             checkFields();
@@ -1637,8 +1650,7 @@
             if (!termsCheck.checked) return;
             if (confirmedPhone !== nums) {
                 confirmNumber.textContent = '+55 ' + phoneInput.value;
-                phoneConfirmation.style.display = 'block';
-                phoneConfirmation.scrollIntoView({ block: 'nearest' });
+                if (!phoneConfirmation.open) phoneConfirmation.showModal();
                 confirmPhoneBtn.focus();
                 return;
             }
