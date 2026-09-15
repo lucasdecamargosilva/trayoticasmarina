@@ -840,26 +840,31 @@
         var confirmedPhone = '';
         var phoneConfirmation = document.createElement('section');
         phoneConfirmation.id = 'q-phone-confirmation';
-        phoneConfirmation.style.cssText = 'display:none;padding:24px 0;text-align:center;';
+        phoneConfirmation.style.cssText = 'display:none;padding:12px;margin-top:12px;border:1px solid var(--c-border,#ddd);border-radius:8px;text-align:left;background:var(--c-surface,#fafafa);';
         var confirmTitle = document.createElement('h2');
         confirmTitle.textContent = 'Seu WhatsApp está correto?';
-        confirmTitle.style.cssText = 'font-size:20px;line-height:1.4;margin:0 0 16px;';
+        confirmTitle.style.cssText = 'font:600 14px/1.4 var(--font-body,sans-serif);letter-spacing:0;text-transform:none;margin:0 0 4px;';
         var confirmNumber = document.createElement('p');
-        confirmNumber.style.cssText = 'font-size:24px;font-weight:600;line-height:1.5;margin:0 0 16px;';
+        confirmNumber.style.cssText = 'font:600 18px/1.5 var(--font-body,sans-serif);letter-spacing:0;margin:0 0 4px;';
         var confirmHint = document.createElement('p');
         confirmHint.textContent = 'Confira o DDD e todos os números antes de continuar.';
-        confirmHint.style.cssText = 'font-size:14px;line-height:1.6;margin:0 0 24px;';
+        confirmHint.style.cssText = 'font:400 12px/1.5 var(--font-body,sans-serif);letter-spacing:0;margin:0 0 8px;';
         var confirmPhoneBtn = document.createElement('button');
         confirmPhoneBtn.type = 'button';
         confirmPhoneBtn.className = 'q-btn-black';
-        confirmPhoneBtn.textContent = 'Sim, este é meu WhatsApp';
+        confirmPhoneBtn.textContent = 'Confirmar';
         var editPhoneBtn = document.createElement('button');
         editPhoneBtn.type = 'button';
         editPhoneBtn.className = 'q-btn-outline';
-        editPhoneBtn.textContent = 'Corrigir número';
-        editPhoneBtn.style.marginTop = '12px';
-        [confirmTitle, confirmNumber, confirmHint, confirmPhoneBtn, editPhoneBtn].forEach(function(el) { phoneConfirmation.appendChild(el); });
-        scroll.appendChild(phoneConfirmation);
+        editPhoneBtn.textContent = 'Corrigir';
+        var confirmActions = document.createElement('div');
+        confirmActions.style.cssText = 'display:flex;gap:8px;align-items:center;';
+        [confirmPhoneBtn, editPhoneBtn].forEach(function(button) {
+            button.style.cssText = 'display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;padding:0 16px!important;margin:0!important;font-size:13px!important;line-height:1.2!important;letter-spacing:0!important;text-transform:none!important;border-radius:6px!important;flex:0 1 auto!important;';
+            confirmActions.appendChild(button);
+        });
+        [confirmTitle, confirmNumber, confirmHint, confirmActions].forEach(function(el) { phoneConfirmation.appendChild(el); });
+        phoneWrap.appendChild(phoneConfirmation);
         editPhoneBtn.onclick = function() {
             confirmedPhone = '';
             phoneConfirmation.style.display = 'none';
@@ -1413,6 +1418,7 @@
 
         phoneInput.addEventListener('input', function(e) {
             confirmedPhone = '';
+            phoneConfirmation.style.display = 'none';
             var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
             e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
             checkFields();
@@ -1631,8 +1637,8 @@
             if (!termsCheck.checked) return;
             if (confirmedPhone !== nums) {
                 confirmNumber.textContent = '+55 ' + phoneInput.value;
-                stepUpload.style.display = 'none';
                 phoneConfirmation.style.display = 'block';
+                phoneConfirmation.scrollIntoView({ block: 'nearest' });
                 confirmPhoneBtn.focus();
                 return;
             }
