@@ -1795,6 +1795,7 @@
         t = String(t || '').normalize('NFC').replace(/\s+/g, ' ').trim();
         var m = t.match(/(\d+)\s*x\s*(?:de\s*)?(R?\$?\s*[\d.,]+)\s*(.*)$/i);
         if (!m) return t ? esc(t) : '';
+        if (parseInt(m[1], 10) < 2 || !(num(m[2]) > 0)) return '';   // "1x de R$ 0,00" = lixo da página
         var rest = (m[3] || '').toLowerCase().replace(/[^a-zà-ú ]/gi, ' ').replace(/\s+/g, ' ').trim();
         rest = rest.replace(/\s*(no|do)\s+cart[aã]o.*$/i, '').trim();
         if (!rest) rest = 'sem juros';
@@ -1809,10 +1810,71 @@
         for (var i = 0; i < all.length; i++) { if (vis(all[i]) && /outra foto|nova foto|provar novamente|tentar novamente/i.test(all[i].textContent || '') && all[i].children.length < 3) return all[i]; }
         return null;
     }
+    // ── Modelo ANTIGO de tela (sem nome/preço/comprar): cria o que falta lendo a página.
+    function pageName() {
+        var h = document.querySelector('h1.product_title, h1.js-product-name, h1.nome-produto, h1.product-name, h1[itemprop="name"], .product-info h1, h1');
+        return ((h && h.innerText) || document.title || '').trim();
+    }
+    function pagePrice() {
+        var v = 0;
+        // 1º o preço VISÍVEL do produto principal (o JSON-LD às vezes traz o preço "de")
+        var vs = document.querySelectorAll('.summary .price ins .amount, .summary .price > .amount, .summary .price .woocommerce-Price-amount, .js-price-display, .preco-promocional, .product-price .price, [itemprop="price"]');
+        for (var k = 0; k < vs.length && !v; k++) { if (vs[k].closest('#q-modal-ia,[class*="card"],[class*="related"],[class*="carousel"],[class*="swiper"]')) continue; v = num(vs[k].getAttribute('content') ? String(vs[k].getAttribute('content')).replace('.', ',') : vs[k].innerText); }
+        document.querySelectorAll('script[type="application/ld+json"]').forEach(function (sc) {
+            if (v) return;
+            try { [].concat(JSON.parse(sc.textContent)).forEach(function (o) { [].concat(o['@graph'] || o).forEach(function (n) { var of = n && n.offers; if (of && !v) { of = [].concat(of)[0]; var p = parseFloat(of.lowPrice || of.price); if (p > 0) v = p; } }); }); } catch (e) {}
+        });
+        if (!v) { var mt = document.querySelector('meta[property="product:price:amount"], meta[itemprop="price"]'); if (mt) v = parseFloat(String(mt.content).replace(',', '.')) || 0; }
+        if (!v) {
+            var el = document.querySelector('.summary .price ins .amount, .summary .price .amount, .js-price-display, .preco-promocional, [itemprop="price"], .product-price, .price');
+            if (el) v = num(el.getAttribute('content') ? String(el.getAttribute('content')).replace('.', ',') : el.innerText);
+        }
+        return v;
+    }
+    function pageInstallment() {
+        var sel = '.js-max-installments, .js-installments, .preco-parcela, .parcelas, [class*="installment"], [class*="parcel"], .summary, .product-price, .price';
+        var els = document.querySelectorAll(sel);
+        for (var i = 0; i < els.length; i++) {
+            if (els[i].closest('#q-modal-ia,[class*="card"],[class*="related"],[class*="carousel"],[class*="swiper"]')) continue;
+            var m = (els[i].innerText || '').replace(/\s+/g, ' ').match(/(\d{1,2})\s*x\s*(?:de\s*)?R\$\s*[\d.]+,\d{2}(?:\s*(?:sem|com)\s*juros)?/i);
+            if (m) return m[0];
+        }
+        return '';
+    }
+    function nativeBuy() {
+        var c = document.querySelectorAll('button.single_add_to_cart_button, .js-addtocart, #button-buy, .botao-comprar, a.botao-comprar, .btn-comprar, button[name="add-to-cart"], [data-action="add-to-cart"], form.cart button[type="submit"], .comprar .botao');
+        for (var i = 0; i < c.length; i++) if (!c[i].closest('#q-modal-ia') && vis(c[i])) return c[i];
+        return c.length ? c[0] : null;
+    }
+    function buildOld(col) {
+        if ($('q-btn-buy-now') || !nativeBuy()) return;
+        if (!$('q-result-prodinfo')) {
+            var info = document.createElement('div'); info.id = 'q-result-prodinfo'; info.className = 'q-result-prodinfo'; info.style.cssText = 'text-align:left;margin-bottom:4px;';
+            var nm = document.createElement('div'); nm.id = 'q-result-prodname'; nm.className = 'q-result-prodname'; nm.style.cssText = 'font-weight:700;color:var(--c-ink,#111);'; nm.textContent = pageName();
+            var pr = document.createElement('div'); pr.id = 'q-result-prodprice'; var pv = pagePrice(); pr.textContent = pv ? brl(pv) : '';
+            var ins = document.createElement('div'); ins.id = 'q-result-installment'; ins.textContent = pageInstallment();
+            info.appendChild(nm); info.appendChild(pr); info.appendChild(ins);
+            var anchorTop = $('q-provas-restantes-result');
+            if (anchorTop && anchorTop.parentNode === col) col.insertBefore(info, anchorTop.nextSibling); else col.insertBefore(info, col.firstChild);
+        }
+        var b = document.createElement('button'); b.type = 'button'; b.id = 'q-btn-buy-now'; b.className = 'q-btn-buy-now'; b.textContent = 'Comprar';
+        b.style.cssText = 'background:var(--c-primary,var(--q-primary,#111));color:#fff;';
+        b.onclick = function () {
+            try { fetch('https://n8n.segredosdodrop.com/webhook/pl-provador-buy-click', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: ((document.querySelector('#q-modal-ia input[type=tel]') || {}).value || ''), origin: location.origin, produto: pageName() }) }).catch(function () {}); } catch (e) {}
+            var x = document.querySelector('#q-close-btn, #q-modal-ia .q-close, #q-modal-ia [class*="close"]');
+            try { if (x) x.click(); else $('q-modal-ia').style.display = 'none'; } catch (e) {}
+            var nb = nativeBuy(); if (nb) { try { nb.scrollIntoView({ block: 'center' }); } catch (e) {} setTimeout(function () { try { nb.click(); } catch (e) {} }, 150); }
+        };
+        var info2 = $('q-result-prodinfo');
+        col.insertBefore(b, info2 ? info2.nextSibling : col.firstChild);
+        var back = $('q-btn-back'); if (back) back.style.setProperty('display', 'none', 'important');
+    }
     function apply() {
-        var col = $('q-result-actions-col'), img = $('q-final-view-img'), buy = $('q-btn-buy-now');
+        var col = $('q-result-actions-col'), img = $('q-final-view-img');
         if (!col || !img || !img.getAttribute('src')) return;
         css();
+        try { buildOld(col); } catch (e) {}
+        var buy = $('q-btn-buy-now');
         // ── preço
         var info = $('q-result-prodinfo'), pe = $('q-result-prodprice'), ie = $('q-result-installment');
         if (info && pe) {
@@ -1866,7 +1928,11 @@
         if (rt && rt !== anchor && rt.parentNode === anchor.parentNode && anchor.nextSibling !== rt) {
             anchor.parentNode.insertBefore(rt, anchor.nextSibling);
         }
-        if (rt) rt.classList.add('pl-rl-retry');
+        if (rt) {
+            rt.classList.add('pl-rl-retry');
+            // só UM botão de outra foto (vários widgets mostram "Tentar outra foto" + "Provar outra foto")
+            [$('q-retry-btn'), $('q-btn-nova-prova')].forEach(function (o) { if (o && o !== rt && vis(o)) o.style.setProperty('display', 'none', 'important'); });
+        }
     }
     function safe() { try { apply(); } catch (e) { try { console.warn('[PL layout]', e); } catch (_) {} } }
     var t = null;
